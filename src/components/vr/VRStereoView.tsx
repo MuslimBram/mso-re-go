@@ -36,13 +36,22 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const height = mount.clientHeight;
 
     const scene = new THREE.Scene();
+    // Single camera used only for WebXR mode (XR manages stereo automatically)
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
     camera.position.set(0, 0, 0.1);
+
+    // Stereo cameras for cardboard-style split screen (left eye + right eye)
+    const eyeSeparation = 0.064; // ~IPD in scene units
+    const leftCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
+    const rightCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
+    leftCamera.position.set(-eyeSeparation / 2, 0, 0);
+    rightCamera.position.set(eyeSeparation / 2, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
     renderer.xr.enabled = true;
+    renderer.autoClear = false;
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -121,17 +130,47 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       const h = mount.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      const halfAspect = (w / 2) / h;
+      leftCamera.aspect = halfAspect;
+      leftCamera.updateProjectionMatrix();
+      rightCamera.aspect = halfAspect;
+      rightCamera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
+    onResize();
 
     const animate = () => {
-      if (!renderer.xr.isPresenting) {
-        camera.rotation.order = "YXZ";
-        camera.rotation.y = yaw;
-        camera.rotation.x = pitch;
+      if (renderer.xr.isPresenting) {
+        // WebXR handles its own stereo rendering
+        renderer.clear();
+        renderer.render(scene, camera);
+        return;
       }
-      renderer.render(scene, camera);
+      // Manual side-by-side stereo for cardboard / phone-in-headset
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
+      const halfW = Math.floor(w / 2);
+
+      leftCamera.rotation.order = "YXZ";
+      leftCamera.rotation.y = yaw;
+      leftCamera.rotation.x = pitch;
+      rightCamera.rotation.order = "YXZ";
+      rightCamera.rotation.y = yaw;
+      rightCamera.rotation.x = pitch;
+
+      renderer.setScissorTest(true);
+      // Left eye
+      renderer.setViewport(0, 0, halfW, h);
+      renderer.setScissor(0, 0, halfW, h);
+      renderer.clear();
+      renderer.render(scene, leftCamera);
+      // Right eye
+      renderer.setViewport(halfW, 0, halfW, h);
+      renderer.setScissor(halfW, 0, halfW, h);
+      renderer.clear();
+      renderer.render(scene, rightCamera);
+      renderer.setScissorTest(false);
     };
     renderer.setAnimationLoop(animate);
 
