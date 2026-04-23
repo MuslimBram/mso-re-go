@@ -98,10 +98,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       currentPanoId = panoId;
 
       const TILE_W = 1024;
-      const TILE_H = 1024;
+      const TILE_H = 512; // 2:1 equirectangular ratio (4*1024 wide × 512 tall = 4096×2048-ish projection-friendly)
       const canvas = document.createElement("canvas");
       canvas.width = TILE_W * 4;
-      canvas.height = TILE_H;
+      canvas.height = TILE_W * 2; // full equirectangular canvas: 4096 × 2048
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
@@ -130,7 +130,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          ctx.drawImage(img, i * TILE_W, 0, TILE_W, TILE_H);
+          // Draw the 90° square tile centered vertically on the equirectangular canvas.
+          // Equirectangular vertical span = 180°; the tile covers ~90° vertically,
+          // so it occupies the middle half of the canvas height.
+          const destY = canvas.height / 4; // top quarter = sky padding
+          const destH = canvas.height / 2; // middle half = tile
+          ctx.drawImage(img, i * TILE_W, destY, TILE_W, destH);
           loaded++;
           // Re-create texture incrementally so user sees progress
           applyTexture();
