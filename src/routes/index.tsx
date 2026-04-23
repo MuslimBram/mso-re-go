@@ -89,7 +89,8 @@ function Index() {
 
   const handleSearchSelect = useCallback((loc: { lat: number; lng: number; name: string }) => {
     setTarget({ lat: loc.lat, lng: loc.lng, ts: Date.now() });
-    toast.success(`Duke udhëtuar drejt ${loc.name}`);
+    const label = loc.name && loc.name !== "undefined" ? loc.name : "vendin e zgjedhur";
+    toast.success(`Duke udhëtuar drejt ${label}`);
   }, []);
 
   const handleMapClick = useCallback((lat: number, lng: number) => {

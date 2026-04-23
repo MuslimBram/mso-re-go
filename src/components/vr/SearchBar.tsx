@@ -14,21 +14,27 @@ export function SearchBar({ onSelect, ready }: Props) {
 
   useEffect(() => {
     if (!ready || !inputRef.current || autocompleteRef.current) return;
-    const ac = new google.maps.places.Autocomplete(inputRef.current, {
-      fields: ["geometry", "name", "formatted_address"],
-    });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      if (!place.geometry?.location) return;
-      setLoading(true);
-      onSelect({
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-        name: place.name || place.formatted_address || "Vend i panjohur",
+    try {
+      const ac = new google.maps.places.Autocomplete(inputRef.current, {
+        fields: ["geometry", "name", "formatted_address"],
       });
-      setTimeout(() => setLoading(false), 600);
-    });
-    autocompleteRef.current = ac;
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        if (!place.geometry?.location) return;
+        setLoading(true);
+        const name =
+          place.name || place.formatted_address || "Vend i panjohur";
+        onSelect({
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+          name,
+        });
+        setTimeout(() => setLoading(false), 600);
+      });
+      autocompleteRef.current = ac;
+    } catch (err) {
+      console.error("Places Autocomplete failed to initialize:", err);
+    }
   }, [ready, onSelect]);
 
   return (

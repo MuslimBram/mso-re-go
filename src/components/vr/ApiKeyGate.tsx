@@ -23,8 +23,10 @@ export function ApiKeyGate({ onSubmit }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = value.trim();
-    if (trimmed.length < 20) {
-      setError("Çelësi duket i pasaktë. Provo përsëri.");
+    if (!/^AIza[0-9A-Za-z_-]{30,}$/.test(trimmed)) {
+      setError(
+        "Çelësi duket i pasaktë. Një Google Maps API key i vërtetë fillon me 'AIza' dhe ka rreth 39 karaktere."
+      );
       return;
     }
     setGoogleMapsKey(trimmed);

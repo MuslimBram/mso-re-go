@@ -44,24 +44,24 @@ export function MiniMap({ lat, lng, heading, onClick }: Props) {
     if (!mapRef.current) return;
     const pos = { lat, lng };
     mapRef.current.panTo(pos);
+    const iconSymbol: google.maps.Symbol = {
+      path: "M 0,-8 L 6,6 L 0,3 L -6,6 Z",
+      fillColor: "#3b82f6",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 2,
+      scale: 1.2,
+      rotation: heading,
+    };
     if (!markerRef.current) {
       markerRef.current = new google.maps.Marker({
         position: pos,
         map: mapRef.current,
-        icon: {
-          path: "M 0,-8 L 6,6 L 0,3 L -6,6 Z",
-          fillColor: "#3b82f6",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-          scale: 1.2,
-          rotation: heading,
-        },
+        icon: iconSymbol,
       });
     } else {
       markerRef.current.setPosition(pos);
-      const icon = markerRef.current.getIcon() as google.maps.Symbol;
-      markerRef.current.setIcon({ ...icon, rotation: heading });
+      markerRef.current.setIcon(iconSymbol);
     }
   }, [lat, lng, heading]);
 
