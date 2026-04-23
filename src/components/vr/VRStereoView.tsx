@@ -1,33 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones, Compass } from "lucide-react";
+import { X, Headphones } from "lucide-react";
 import { toast } from "sonner";
-
-export type PanoramaViewMode = "sphere-ns" | "sphere-ew" | "vr";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
   apiKey: string;
-  mode: PanoramaViewMode;
   onExit: () => void;
 }
 
 /**
- * Renders the current Street View panorama either as a split 180°+180° sphere preview
- * with FIXED cardinal orientation (North+South or East+West), or as immersive WebXR VR.
+ * Renders the current Street View panorama as a split 180°+180° stereo view
+ * (front pane = current heading, back pane = opposite). Supports WebXR for headsets.
  */
-export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
+export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const isVrMode = mode === "vr";
-  const isNS = mode === "sphere-ns";
-  // Front heading in radians: North = 0, East = PI/2
-  const frontHeading = isNS ? 0 : Math.PI / 2;
-  // Labels for the two panes
-  const leftLabel = isNS ? "Veri (N) 180°" : "Lindje (E) 180°";
-  const rightLabel = isNS ? "Jug (S) 180°" : "Perëndim (W) 180°";
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
@@ -200,17 +190,16 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
     onResize();
 
     const animate = () => {
-      if (isVrMode && renderer.xr.isPresenting) {
+      if (renderer.xr.isPresenting) {
         // WebXR handles its own stereo rendering
         renderer.clear();
         renderer.render(scene, camera);
         return;
       }
-      // Sphere mode: fixed cardinal orientation (independent of current heading)
-      // Front pane = North (or East), Back pane = South (or West) via uOffset = PI
-      frontMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      // Split mode: front pane = current heading + user yaw, back = +180° (uOffset)
+      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
       frontMaterial.uniforms.uPitch.value = pitch;
-      backMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
       backMaterial.uniforms.uPitch.value = pitch;
       renderer.clear();
       renderer.render(splitScene, splitCamera);
@@ -228,12 +217,11 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [panorama, apiKey, isVrMode, frontHeading]);
+  }, [panorama, apiKey]);
 
   const enterXR = async () => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    if (!isVrMode) return;
     const nav = navigator as Navigator & {
       xr?: { requestSession(mode: string, opts?: object): Promise<XRSession> };
     };
@@ -256,13 +244,11 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
-          {isVrMode ? <Headphones className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
-          <span className="text-sm font-medium">
-            {isVrMode ? "VR Mode" : `Sphere ${isNS ? "Veri + Jug" : "Lindje + Perëndim"}`}
-          </span>
+          <Headphones className="h-4 w-4" />
+          <span className="text-sm font-medium">VR Headset Mode</span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
-          {isVrMode && xrSupported && (
+          {xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
           <Button onClick={onExit} variant="secondary" size="sm">
@@ -271,31 +257,20 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
         </div>
       </div>
 
-      {!isVrMode && (
-        <>
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-            ← {leftLabel}
-          </div>
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-            {rightLabel} →
-          </div>
-        </>
-      )}
+      <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+        ← Syri Majtas (180°)
+      </div>
+      <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+        Syri Djathtas (180°) →
+      </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
-        {!isVrMode && (
-          <p className="text-muted-foreground">
-            {isNS
-              ? "Majtas sheh 180° drejt Veriut, djathtas 180° drejt Jugut — bashkë bëjnë 360°."
-              : "Majtas sheh 180° drejt Lindjes, djathtas 180° drejt Perëndimit — bashkë bëjnë 360°."}
-          </p>
-        )}
-        {isVrMode && xrSupported === false && (
+        {xrSupported === false && (
           <p className="text-muted-foreground">
             WebXR nuk u zbulua. Përdor mausin për të lëvizur. Për headset të vërtetë, hape në një browser që mbështet WebXR (Quest Browser, Chrome me HTTPS).
           </p>
         )}
-        {isVrMode && xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
+        {xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
       </div>
     </div>
   );

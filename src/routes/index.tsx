@@ -6,7 +6,7 @@ import { MiniMap } from "@/components/vr/MiniMap";
 import { StreetViewExplorer, type PanoState } from "@/components/vr/StreetViewExplorer";
 import { ControlsHelp } from "@/components/vr/ControlsHelp";
 import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
-import { VRStereoView, type PanoramaViewMode } from "@/components/vr/VRStereoView";
+import { VRStereoView } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { Button } from "@/components/ui/button";
 import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles } from "lucide-react";
@@ -40,7 +40,7 @@ function Index() {
   const [target, setTarget] = useState<{ lat: number; lng: number; ts: number } | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [viewMode, setViewMode] = useState<PanoramaViewMode | null>(null);
+  const [vrOpen, setVrOpen] = useState(false);
   const [showFamous, setShowFamous] = useState(false);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
@@ -242,7 +242,7 @@ function Index() {
                 toast.error("Pamja nuk është gati");
                 return;
               }
-              setViewMode("vr");
+              setVrOpen(true);
             }}
             size="lg"
             className="hud-glow pulse-ring"
@@ -275,6 +275,7 @@ function Index() {
       {/* Famous places panel */}
       {showFamous && (
         <FamousPlaces
+          apiKey={apiKey}
           onTeleport={(lat, lng, name) => {
             handleTeleport(lat, lng);
             setShowFamous(false);
@@ -285,12 +286,11 @@ function Index() {
       )}
 
       {/* Sphere / VR overlay */}
-      {viewMode && panoramaInstanceRef.current && apiKey && (
+      {vrOpen && panoramaInstanceRef.current && apiKey && (
         <VRStereoView
           panorama={panoramaInstanceRef.current}
           apiKey={apiKey}
-          mode={viewMode}
-          onExit={() => setViewMode(null)}
+          onExit={() => setVrOpen(false)}
         />
       )}
 

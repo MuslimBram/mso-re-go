@@ -6,11 +6,12 @@ export interface FamousPlace {
   name: string;
   lat: number;
   lng: number;
-  category: "islamic" | "world";
+  category: "islamic" | "world" | "nature" | "city";
+  heading?: number;
 }
 
 export const FAMOUS_PLACES: FamousPlace[] = [
-  // Vende të shenjta islame
+  // 🕋 Vende të shenjta islame
   { name: "🕋 Qabeja — Mekë", lat: 21.4225, lng: 39.8262, category: "islamic" },
   { name: "🕌 El-Mesxhid en-Nebeui — Medinë", lat: 24.4672, lng: 39.6111, category: "islamic" },
   { name: "🕌 Xhamia Al-Aksa — Kudus", lat: 31.7780, lng: 35.2354, category: "islamic" },
@@ -19,27 +20,74 @@ export const FAMOUS_PLACES: FamousPlace[] = [
   { name: "🌄 Xhebel al-Nur (Hira)", lat: 21.4577, lng: 39.8597, category: "islamic" },
   { name: "🕌 Imam Ali — Najaf", lat: 32.0006, lng: 44.3147, category: "islamic" },
   { name: "🕌 Imam Husein — Karbala", lat: 32.6164, lng: 44.0322, category: "islamic" },
+  { name: "🕌 Xhamia Blu — Stamboll", lat: 41.0054, lng: 28.9768, category: "islamic" },
+  { name: "🕌 Sheikh Zayed — Abu Dhabi", lat: 24.4128, lng: 54.4748, category: "islamic" },
+  { name: "🕌 Hassan II — Kazablanka", lat: 33.6082, lng: -7.6326, category: "islamic" },
+  { name: "🕌 Et'hem Bey — Tiranë", lat: 41.3275, lng: 19.8189, category: "islamic" },
   { name: "📚 Timbuktu", lat: 16.7666, lng: -3.0026, category: "islamic" },
-  // Monumente botërore
+
+  // 🗼 Monumente botërore
   { name: "🗼 Kulla Eiffel — Paris", lat: 48.8584, lng: 2.2945, category: "world" },
   { name: "🗽 Statuja e Lirisë — New York", lat: 40.6892, lng: -74.0445, category: "world" },
   { name: "🏟️ Koloseu — Romë", lat: 41.8902, lng: 12.4922, category: "world" },
   { name: "🏯 Muri i Madh — Kinë", lat: 40.4319, lng: 116.5704, category: "world" },
   { name: "🕌 Shën Sofia — Stamboll", lat: 41.0086, lng: 28.9802, category: "world" },
   { name: "🏝️ Burj Khalifa — Dubai", lat: 25.1972, lng: 55.2744, category: "world" },
+  { name: "🗿 Machu Picchu — Peru", lat: -13.1631, lng: -72.5450, category: "world" },
+  { name: "🛕 Taj Mahal — Indi", lat: 27.1751, lng: 78.0421, category: "world" },
+  { name: "⛪ Sagrada Familia — Barcelonë", lat: 41.4036, lng: 2.1744, category: "world" },
+  { name: "🏛️ Akropoli — Athinë", lat: 37.9715, lng: 23.7267, category: "world" },
+  { name: "🎡 London Eye — Londër", lat: 51.5033, lng: -0.1196, category: "world" },
+  { name: "🌉 Golden Gate — San Francisco", lat: 37.8199, lng: -122.4783, category: "world" },
+  { name: "🗼 Kulla e Tokios", lat: 35.6586, lng: 139.7454, category: "world" },
+  { name: "🏛️ Brandenburg Gate — Berlin", lat: 52.5163, lng: 13.3777, category: "world" },
+  { name: "🕍 Notre-Dame — Paris", lat: 48.8530, lng: 2.3499, category: "world" },
+  { name: "🗿 Krishti Çlirimtar — Rio", lat: -22.9519, lng: -43.2105, category: "world" },
+  { name: "🏛️ Pantheon — Romë", lat: 41.8986, lng: 12.4769, category: "world" },
+  { name: "🕌 Kremlin — Moskë", lat: 55.7520, lng: 37.6175, category: "world" },
+
+  // 🌄 Natyrë
+  { name: "🏔️ Mount Everest — Bazë", lat: 28.0026, lng: 86.8528, category: "nature" },
+  { name: "🌋 Grand Canyon — SHBA", lat: 36.0544, lng: -112.1401, category: "nature" },
+  { name: "🏞️ Niagara Falls", lat: 43.0962, lng: -79.0377, category: "nature" },
+  { name: "🌅 Santorini — Greqi", lat: 36.3932, lng: 25.4615, category: "nature" },
+  { name: "🏖️ Maldivet", lat: 3.2028, lng: 73.2207, category: "nature" },
+  { name: "🌳 Amazon — Manaus", lat: -3.1190, lng: -60.0217, category: "nature" },
+
+  // 🌆 Qytete të frekuentuara
+  { name: "🌆 Times Square — New York", lat: 40.7580, lng: -73.9855, category: "city" },
+  { name: "🚦 Shibuya — Tokio", lat: 35.6595, lng: 139.7004, category: "city" },
+  { name: "🎰 Las Vegas Strip", lat: 36.1147, lng: -115.1728, category: "city" },
+  { name: "🌉 Sydney Opera", lat: -33.8568, lng: 151.2153, category: "city" },
+  { name: "🏙️ Singapore Marina Bay", lat: 1.2834, lng: 103.8607, category: "city" },
+  { name: "🕌 Sheshi i Kuq — Moskë", lat: 55.7539, lng: 37.6208, category: "city" },
+  { name: "🌃 Hong Kong Skyline", lat: 22.2793, lng: 114.1628, category: "city" },
+  { name: "🏛️ Sheshi Skënderbej — Tiranë", lat: 41.3281, lng: 19.8187, category: "city" },
 ];
 
 interface Props {
+  apiKey: string;
   onTeleport: (lat: number, lng: number, name: string) => void;
   onClose: () => void;
 }
 
-export function FamousPlaces({ onTeleport, onClose }: Props) {
-  const islamic = FAMOUS_PLACES.filter((p) => p.category === "islamic");
-  const world = FAMOUS_PLACES.filter((p) => p.category === "world");
+const CATEGORY_LABELS: Record<FamousPlace["category"], string> = {
+  islamic: "🕋 Vende të shenjta islame",
+  world: "🗼 Monumente botërore",
+  nature: "🌄 Natyrë mahnitëse",
+  city: "🌆 Qytete të frekuentuara",
+};
 
+const CATEGORY_ORDER: FamousPlace["category"][] = ["islamic", "world", "nature", "city"];
+
+function thumbUrl(p: FamousPlace, apiKey: string) {
+  const heading = p.heading ?? 0;
+  return `https://maps.googleapis.com/maps/api/streetview?size=160x96&location=${p.lat},${p.lng}&fov=90&heading=${heading}&pitch=0&key=${encodeURIComponent(apiKey)}`;
+}
+
+export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
   return (
-    <div className="fixed top-20 right-4 bottom-4 w-80 z-20 glass-panel rounded-2xl flex flex-col overflow-hidden">
+    <div className="fixed top-20 right-4 bottom-4 w-96 z-20 glass-panel rounded-2xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
@@ -50,39 +98,42 @@ export function FamousPlaces({ onTeleport, onClose }: Props) {
         </Button>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
-          <section>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              Vende të shenjta islame
-            </h4>
-            <div className="space-y-1">
-              {islamic.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => onTeleport(p.lat, p.lng, p.name)}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent/50 transition-colors"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </section>
-          <section>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              Monumente botërore
-            </h4>
-            <div className="space-y-1">
-              {world.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => onTeleport(p.lat, p.lng, p.name)}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent/50 transition-colors"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </section>
+        <div className="p-3 space-y-5">
+          {CATEGORY_ORDER.map((cat) => {
+            const items = FAMOUS_PLACES.filter((p) => p.category === cat);
+            if (items.length === 0) return null;
+            return (
+              <section key={cat}>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                  {CATEGORY_LABELS[cat]}
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {items.map((p) => (
+                    <button
+                      key={p.name}
+                      onClick={() => onTeleport(p.lat, p.lng, p.name)}
+                      className="group text-left rounded-lg overflow-hidden bg-card/40 hover:bg-accent/50 border border-border/40 transition-all hover:border-primary/40"
+                    >
+                      <div className="aspect-[5/3] bg-muted overflow-hidden">
+                        <img
+                          src={thumbUrl(p, apiKey)}
+                          alt={p.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-medium leading-tight line-clamp-2">{p.name}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
