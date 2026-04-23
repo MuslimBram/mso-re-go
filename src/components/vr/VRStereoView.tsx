@@ -24,6 +24,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const fovRef = useRef(75);
+  const moveByHeadingOffsetRef = useRef<(deg: number) => void>(() => {});
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
