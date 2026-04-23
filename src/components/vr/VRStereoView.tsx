@@ -72,6 +72,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const rightCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
     leftCamera.position.set(-EYE_SEPARATION, 0, 0);
     rightCamera.position.set(EYE_SEPARATION, 0, 0);
+    camerasRef.current = { left: leftCamera, right: rightCamera };
 
     // Single camera used only for WebXR mode (XR manages stereo automatically)
     const xrCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
