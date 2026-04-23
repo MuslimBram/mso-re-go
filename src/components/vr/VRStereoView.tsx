@@ -267,9 +267,31 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
           <Headphones className="h-4 w-4" />
-          <span className="text-sm font-medium">VR Stereo Mode</span>
+          <span className="text-sm font-medium">
+            {viewMode === "cardboard" ? "Cardboard Stereo" : "Split 360°"}
+          </span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
+          <div className="flex rounded-lg glass-panel overflow-hidden">
+            <Button
+              onClick={() => setViewMode("split360")}
+              variant={viewMode === "split360" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              title="Majtas: drejtimi aktual · Djathtas: 180° përballë"
+            >
+              <SplitSquareHorizontal className="h-4 w-4 mr-1" /> Split 360°
+            </Button>
+            <Button
+              onClick={() => setViewMode("cardboard")}
+              variant={viewMode === "cardboard" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              title="Të dyja syt shohin të njëjtin drejtim (për kufje)"
+            >
+              <Glasses className="h-4 w-4 mr-1" /> Cardboard
+            </Button>
+          </div>
           {xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
@@ -280,6 +302,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
+        <p className="text-muted-foreground mb-1">
+          {viewMode === "split360"
+            ? "Majtas = drejtimi yt aktual · Djathtas = 180° përballë"
+            : "Pamje stereo për kufje VR (të dy lentet, i njëjti drejtim)"}
+        </p>
         {xrSupported === false && (
           <p className="text-muted-foreground">
             WebXR nuk u zbulua. Përdor mausin për të lëvizur. Për headset të vërtetë, hape në një browser që mbështet WebXR (Quest Browser, Chrome me HTTPS).
