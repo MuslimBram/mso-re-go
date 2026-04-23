@@ -261,10 +261,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       </div>
 
       <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-        ← Syri Majtas (180°)
+        👁️ Syri Majtas
       </div>
       <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-        Syri Djathtas (180°) →
+        Syri Djathtas 👁️
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
