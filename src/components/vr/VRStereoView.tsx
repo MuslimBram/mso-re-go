@@ -20,6 +20,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const camerasRef = useRef<{ left: THREE.PerspectiveCamera; right: THREE.PerspectiveCamera } | null>(null);
+  const yawRef = useRef(0);
+  const pitchRef = useRef(0);
+  const fovRef = useRef(75);
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
