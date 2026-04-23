@@ -199,6 +199,57 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     window.addEventListener("resize", onResize);
     onResize();
 
+    // Keyboard navigation: arrow keys = walk, A/D = turn, W/S = look up/down, +/- = zoom
+    const onKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(0);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(180);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(-90);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(90);
+          break;
+        case "a":
+        case "A":
+          yawRef.current -= THREE.MathUtils.degToRad(10);
+          break;
+        case "d":
+        case "D":
+          yawRef.current += THREE.MathUtils.degToRad(10);
+          break;
+        case "w":
+        case "W": {
+          const next = pitchRef.current + THREE.MathUtils.degToRad(10);
+          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
+          break;
+        }
+        case "s":
+        case "S": {
+          const next = pitchRef.current - THREE.MathUtils.degToRad(10);
+          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
+          break;
+        }
+        case "+":
+        case "=":
+          fovRef.current = Math.max(35, Math.min(110, fovRef.current - 8));
+          break;
+        case "-":
+        case "_":
+          fovRef.current = Math.max(35, Math.min(110, fovRef.current + 8));
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
     const animate = () => {
       if (renderer.xr.isPresenting) {
         // WebXR handles its own stereo rendering and head tracking
