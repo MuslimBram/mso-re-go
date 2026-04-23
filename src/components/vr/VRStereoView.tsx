@@ -203,10 +203,26 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      frontMaterial.uniforms.uPitch.value = panoPitch + pitch;
-      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      backMaterial.uniforms.uPitch.value = panoPitch + pitch;
+      const heading = panoHeading + yaw;
+      const pitchTotal = panoPitch + pitch;
+      frontMaterial.uniforms.uHeading.value = heading;
+      frontMaterial.uniforms.uPitch.value = pitchTotal;
+      backMaterial.uniforms.uHeading.value = heading;
+      backMaterial.uniforms.uPitch.value = pitchTotal;
+      if (viewModeRef.current === "cardboard") {
+        // Both eyes show the SAME direction at ~100° FOV (stereo headset feel)
+        frontMaterial.uniforms.uOffset.value = 0;
+        backMaterial.uniforms.uOffset.value = 0;
+        const fov = (100 * Math.PI) / 180;
+        frontMaterial.uniforms.uHFov.value = fov;
+        backMaterial.uniforms.uHFov.value = fov;
+      } else {
+        // Split 360°: left = current heading 180°, right = opposite 180°
+        frontMaterial.uniforms.uOffset.value = 0;
+        backMaterial.uniforms.uOffset.value = Math.PI;
+        frontMaterial.uniforms.uHFov.value = Math.PI;
+        backMaterial.uniforms.uHFov.value = Math.PI;
+      }
       renderer.clear();
       renderer.render(splitScene, splitCamera);
     };
