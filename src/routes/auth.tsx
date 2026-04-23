@@ -71,8 +71,8 @@ function AuthPage() {
         </Link>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[oklch(0.6_0.2_240)] to-[oklch(0.5_0.22_280)]">
-            <Globe2 className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-primary text-primary-foreground">
+            <Globe2 className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">{mode === "signin" ? "Kyçu" : "Krijo llogari"}</h1>
@@ -81,6 +81,12 @@ function AuthPage() {
             </p>
           </div>
         </div>
+
+        {mode === "signup" && (
+          <p className="mb-4 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            Pas regjistrimit, konfirmo email-in përpara se të kyçesh.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
