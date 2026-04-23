@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, MapPin } from "lucide-react";
+import { X, MapPin, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export interface FamousPlace {
   name: string;
@@ -25,6 +27,13 @@ export const FAMOUS_PLACES: FamousPlace[] = [
   { name: "🕌 Hassan II — Kazablanka", lat: 33.6082, lng: -7.6326, category: "islamic" },
   { name: "🕌 Et'hem Bey — Tiranë", lat: 41.3275, lng: 19.8189, category: "islamic" },
   { name: "📚 Timbuktu", lat: 16.7666, lng: -3.0026, category: "islamic" },
+  { name: "🕌 Sulejmanije — Stamboll", lat: 41.0161, lng: 28.9639, category: "islamic" },
+  { name: "🕌 Xhamia e Kordobës", lat: 37.8790, lng: -4.7794, category: "islamic" },
+  { name: "🕌 Badshahi — Lahore", lat: 31.5880, lng: 74.3104, category: "islamic" },
+  { name: "🕌 Faisal — Islamabad", lat: 33.7295, lng: 73.0372, category: "islamic" },
+  { name: "🕌 Xhamia e Kairos (Al-Azhar)", lat: 30.0459, lng: 31.2625, category: "islamic" },
+  { name: "🕌 Xhamia Bibi-Khanym — Samarkand", lat: 39.6606, lng: 66.9758, category: "islamic" },
+  { name: "🕌 Kubbet'us-Sahra — Kudus", lat: 31.7781, lng: 35.2354, category: "islamic" },
 
   // 🗼 Monumente botërore
   { name: "🗼 Kulla Eiffel — Paris", lat: 48.8584, lng: 2.2945, category: "world" },
@@ -45,6 +54,22 @@ export const FAMOUS_PLACES: FamousPlace[] = [
   { name: "🗿 Krishti Çlirimtar — Rio", lat: -22.9519, lng: -43.2105, category: "world" },
   { name: "🏛️ Pantheon — Romë", lat: 41.8986, lng: 12.4769, category: "world" },
   { name: "🕌 Kremlin — Moskë", lat: 55.7520, lng: 37.6175, category: "world" },
+  { name: "🏛️ Piramidat e Gizës", lat: 29.9792, lng: 31.1342, category: "world" },
+  { name: "🦁 Sfinksi i Madh — Egjipt", lat: 29.9753, lng: 31.1376, category: "world" },
+  { name: "🏛️ Petra — Jordani", lat: 30.3285, lng: 35.4444, category: "world" },
+  { name: "🗽 Big Ben — Londër", lat: 51.5007, lng: -0.1246, category: "world" },
+  { name: "🌉 Tower Bridge — Londër", lat: 51.5055, lng: -0.0754, category: "world" },
+  { name: "🏰 Kalaja e Pragës", lat: 50.0909, lng: 14.4006, category: "world" },
+  { name: "🏰 Neuschwanstein — Gjermani", lat: 47.5576, lng: 10.7498, category: "world" },
+  { name: "🗼 CN Tower — Toronto", lat: 43.6426, lng: -79.3871, category: "world" },
+  { name: "🏛️ Casa Milà — Barcelonë", lat: 41.3954, lng: 2.1619, category: "world" },
+  { name: "🏛️ Versailles — Francë", lat: 48.8049, lng: 2.1204, category: "world" },
+  { name: "🏛️ Angkor Wat — Kamboxhia", lat: 13.4125, lng: 103.8670, category: "world" },
+  { name: "🛕 Borobudur — Indonezi", lat: -7.6079, lng: 110.2038, category: "world" },
+  { name: "🗿 Stonehenge — Angli", lat: 51.1789, lng: -1.8262, category: "world" },
+  { name: "🏛️ Alhambra — Granada", lat: 37.1761, lng: -3.5881, category: "world" },
+  { name: "🌋 Mount Rushmore — SHBA", lat: 43.8791, lng: -103.4591, category: "world" },
+  { name: "🗼 Space Needle — Seattle", lat: 47.6205, lng: -122.3493, category: "world" },
 
   // 🌄 Natyrë
   { name: "🏔️ Mount Everest — Bazë", lat: 28.0026, lng: 86.8528, category: "nature" },
@@ -53,6 +78,18 @@ export const FAMOUS_PLACES: FamousPlace[] = [
   { name: "🌅 Santorini — Greqi", lat: 36.3932, lng: 25.4615, category: "nature" },
   { name: "🏖️ Maldivet", lat: 3.2028, lng: 73.2207, category: "nature" },
   { name: "🌳 Amazon — Manaus", lat: -3.1190, lng: -60.0217, category: "nature" },
+  { name: "🏔️ Alpet Zvicerane — Matterhorn", lat: 45.9763, lng: 7.6586, category: "nature" },
+  { name: "🌊 Great Barrier Reef", lat: -16.7000, lng: 145.9667, category: "nature" },
+  { name: "💦 Iguazu Falls — Brazil/Argjentinë", lat: -25.6953, lng: -54.4367, category: "nature" },
+  { name: "🏝️ Bora Bora", lat: -16.5004, lng: -151.7415, category: "nature" },
+  { name: "🌋 Vullkani Kilauea — Havai", lat: 19.4069, lng: -155.2834, category: "nature" },
+  { name: "🏞️ Plitvice — Kroaci", lat: 44.8654, lng: 15.5820, category: "nature" },
+  { name: "🏔️ Fjordet — Norvegji", lat: 60.8694, lng: 7.0667, category: "nature" },
+  { name: "🌵 Sahara — Maroc", lat: 31.0801, lng: -4.0133, category: "nature" },
+  { name: "🦁 Serengeti — Tanzani", lat: -2.3333, lng: 34.8333, category: "nature" },
+  { name: "🏔️ Liqeni i Ohrit", lat: 41.0297, lng: 20.7080, category: "nature" },
+  { name: "🏖️ Ksamil — Shqipëri", lat: 39.7672, lng: 20.0014, category: "nature" },
+  { name: "🏔️ Theth — Alpet Shqiptare", lat: 42.3933, lng: 19.7669, category: "nature" },
 
   // 🌆 Qytete të frekuentuara
   { name: "🌆 Times Square — New York", lat: 40.7580, lng: -73.9855, category: "city" },
@@ -63,6 +100,20 @@ export const FAMOUS_PLACES: FamousPlace[] = [
   { name: "🕌 Sheshi i Kuq — Moskë", lat: 55.7539, lng: 37.6208, category: "city" },
   { name: "🌃 Hong Kong Skyline", lat: 22.2793, lng: 114.1628, category: "city" },
   { name: "🏛️ Sheshi Skënderbej — Tiranë", lat: 41.3281, lng: 19.8187, category: "city" },
+  { name: "🌉 Brooklyn Bridge — NYC", lat: 40.7061, lng: -73.9969, category: "city" },
+  { name: "🏙️ Champs-Élysées — Paris", lat: 48.8698, lng: 2.3079, category: "city" },
+  { name: "🏙️ Piccadilly Circus — Londër", lat: 51.5101, lng: -0.1342, category: "city" },
+  { name: "🏙️ Plaza Mayor — Madrid", lat: 40.4155, lng: -3.7074, category: "city" },
+  { name: "🏙️ Trafalgar Square — Londër", lat: 51.5080, lng: -0.1281, category: "city" },
+  { name: "🏙️ Sheshi i Shën Markut — Venecia", lat: 45.4341, lng: 12.3388, category: "city" },
+  { name: "🏙️ Sheshi i Kuq — Pekin (Tiananmen)", lat: 39.9055, lng: 116.3976, category: "city" },
+  { name: "🏙️ Dam Square — Amsterdam", lat: 52.3731, lng: 4.8926, category: "city" },
+  { name: "🏙️ Wenceslas Square — Pragë", lat: 50.0810, lng: 14.4267, category: "city" },
+  { name: "🏙️ Sheshi Taksim — Stamboll", lat: 41.0370, lng: 28.9850, category: "city" },
+  { name: "🏙️ Old Quebec — Kanada", lat: 46.8129, lng: -71.2080, category: "city" },
+  { name: "🏙️ Marina Beach — Dubai", lat: 25.0785, lng: 55.1390, category: "city" },
+  { name: "🏙️ Bulevardi Dëshmorët — Prishtinë", lat: 42.6629, lng: 21.1655, category: "city" },
+  { name: "🏙️ Sheshi Liria — Shkup", lat: 41.9962, lng: 21.4316, category: "city" },
 ];
 
 interface Props {
