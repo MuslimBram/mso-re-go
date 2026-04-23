@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { setGoogleMapsKey } from "@/lib/google-maps-key";
+import { getGoogleMapsKey, setGoogleMapsKey } from "@/lib/google-maps-key";
 import { Globe2, KeyRound, ExternalLink } from "lucide-react";
 
 interface Props {
@@ -12,6 +12,13 @@ interface Props {
 export function ApiKeyGate({ onSubmit }: Props) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const existingKey = getGoogleMapsKey();
+    if (existingKey) {
+      setValue(existingKey);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +42,8 @@ export function ApiKeyGate({ onSubmit }: Props) {
       />
       <div className="relative w-full max-w-lg mx-4 my-8 p-8 rounded-2xl glass-panel hud-glow">
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[oklch(0.6_0.2_240)] to-[oklch(0.5_0.22_280)]">
-            <Globe2 className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-primary text-primary-foreground">
+            <Globe2 className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">VR Explorer</h1>
@@ -62,7 +69,7 @@ export function ApiKeyGate({ onSubmit }: Props) {
             />
             {error && <p className="text-sm text-destructive">{error}</p>}
             <p className="text-xs text-muted-foreground">
-              Çelësi ruhet vetëm në browser-in tënd (localStorage). Aktivizo:{" "}
+              Nëse e vendos këtu, çelësi ruhet vetëm në browser-in tënd. Aktivizo:{" "}
               <strong>Maps JavaScript API</strong>, <strong>Street View Static API</strong>,{" "}
               <strong>Places API</strong>.
             </p>

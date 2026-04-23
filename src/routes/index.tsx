@@ -133,7 +133,9 @@ function Index() {
   const handleClearKey = () => {
     if (window.confirm("Hiq Google Maps API key?")) {
       clearGoogleMapsKey();
-      window.location.reload();
+      setMapsReady(false);
+      setApiKey(null);
+      toast.success("API key u hoq");
     }
   };
 
@@ -147,7 +149,7 @@ function Index() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-background overflow-hidden">
       {mapsReady && (
         <StreetViewExplorer
           initial={DEFAULT_LOCATION}
@@ -158,7 +160,7 @@ function Index() {
       )}
 
       {!mapsReady && (
-        <div className="absolute inset-0 flex items-center justify-center text-white">
+        <div className="absolute inset-0 flex items-center justify-center text-foreground">
           <div className="flex flex-col items-center gap-3">
             <Globe2 className="h-12 w-12 animate-spin" style={{ animationDuration: "3s" }} />
             <p>Duke ngarkuar Street View...</p>
@@ -170,8 +172,8 @@ function Index() {
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-4 z-10 pointer-events-none">
         <div className="flex items-center gap-3 pointer-events-auto">
           <div className="px-3 py-2 rounded-xl glass-panel flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-[oklch(0.6_0.2_240)] to-[oklch(0.5_0.22_280)]">
-              <Globe2 className="h-4 w-4 text-white" />
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-primary text-primary-foreground">
+              <Globe2 className="h-4 w-4" />
             </div>
             <span className="font-semibold text-sm hidden sm:inline">VR Explorer</span>
           </div>
