@@ -40,14 +40,60 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
     camera.position.set(0, 0, 0.1);
 
-    // Split-screen 360°: left half shows front 180°, right half shows back 180°.
-    // Together they cover the full panorama. FOV ~140° per eye (perspective max ~179°,
-    // values >150° distort heavily). For Meta Quest / WebXR the renderer above takes over.
-    const HALF_FOV = 140;
-    const frontCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
-    const backCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
-    frontCamera.position.set(0, 0, 0);
-    backCamera.position.set(0, 0, 0);
+    // Non-WebXR mode uses two exact 180° panes from the equirectangular panorama:
+    // left = current heading, right = current heading + 180°.
+    const splitScene = new THREE.Scene();
+    const splitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const splitGeometry = new THREE.PlaneGeometry(1, 2);
+    const splitVertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+    const splitFragmentShader = `
+      uniform sampler2D uTexture;
+      uniform float uHeading;
+      uniform float uPitch;
+      uniform float uOffset;
+      varying vec2 vUv;
+      const float PI = 3.141592653589793;
+
+      void main() {
+        float heading = uHeading + uOffset + ((vUv.x - 0.5) * PI);
+        float latitude = clamp(uPitch + ((0.5 - vUv.y) * PI), -1.560796, 1.560796);
+        float u = fract(heading / (2.0 * PI));
+        if (u < 0.0) u += 1.0;
+        float v = 0.5 - (latitude / PI);
+        gl_FragColor = texture2D(uTexture, vec2(u, v));
+      }
+    `;
+    const frontMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: null },
+        uHeading: { value: 0 },
+        uPitch: { value: 0 },
+        uOffset: { value: 0 },
+      },
+      vertexShader: splitVertexShader,
+      fragmentShader: splitFragmentShader,
+    });
+    const backMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: null },
+        uHeading: { value: 0 },
+        uPitch: { value: 0 },
+        uOffset: { value: Math.PI },
+      },
+      vertexShader: splitVertexShader,
+      fragmentShader: splitFragmentShader,
+    });
+    const frontPane = new THREE.Mesh(splitGeometry, frontMaterial);
+    frontPane.position.x = -0.5;
+    const backPane = new THREE.Mesh(splitGeometry, backMaterial);
+    backPane.position.x = 0.5;
+    splitScene.add(frontPane, backPane);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -65,6 +111,8 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     scene.add(sphere);
 
     let currentPanoId: string | null = null;
+    let panoHeading = 0;
+    let panoPitch = 0;
 
     const loadPanoTexture = (panoId: string) => {
       if (panoId === currentPanoId) return;
@@ -79,9 +127,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         url,
         (tex) => {
           tex.colorSpace = THREE.SRGBColorSpace;
+          tex.wrapS = THREE.RepeatWrapping;
           (sphere.material as THREE.MeshBasicMaterial).map = tex;
           (sphere.material as THREE.MeshBasicMaterial).color.setHex(0xffffff);
           (sphere.material as THREE.MeshBasicMaterial).needsUpdate = true;
+          frontMaterial.uniforms.uTexture.value = tex;
+          backMaterial.uniforms.uTexture.value = tex;
         },
         undefined,
         () => {
@@ -94,8 +145,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       const id = panorama.getPano();
       if (id) loadPanoTexture(id);
       const pov = panorama.getPov();
+      panoHeading = THREE.MathUtils.degToRad(pov.heading || 0);
+      panoPitch = THREE.MathUtils.degToRad(pov.pitch || 0);
       // rotate sphere so user sees same heading as the Street View
-      sphere.rotation.y = THREE.MathUtils.degToRad(-(pov.heading || 0));
+      sphere.rotation.y = -panoHeading;
     };
 
     syncFromPanorama();
