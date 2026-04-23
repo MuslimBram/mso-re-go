@@ -233,12 +233,25 @@ function Index() {
                 toast.error("Pamja nuk është gati");
                 return;
               }
-              setViewMode("sphere");
+              setViewMode("sphere-ns");
             }}
             size="lg"
             className="hud-glow"
           >
-            <Orbit className="h-5 w-5 mr-2" /> Sphere 180° + 180°
+            <Compass className="h-5 w-5 mr-2" /> Sphere Veri + Jug
+          </Button>
+          <Button
+            onClick={() => {
+              if (!panoramaInstanceRef.current) {
+                toast.error("Pamja nuk është gati");
+                return;
+              }
+              setViewMode("sphere-ew");
+            }}
+            size="lg"
+            className="hud-glow"
+          >
+            <Compass className="h-5 w-5 mr-2 rotate-90" /> Sphere Lindje + Perëndim
           </Button>
           <Button
             onClick={() => {
