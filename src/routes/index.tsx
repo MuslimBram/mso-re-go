@@ -9,7 +9,7 @@ import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
 import { VRStereoView, type PanoramaViewMode } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Compass, Sparkles } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -236,32 +236,6 @@ function Index() {
       {/* Bottom-right: Sphere/VR buttons + mini-map */}
       <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-3">
         <div className="flex flex-col items-end gap-2">
-          <Button
-            onClick={() => {
-              if (!panoramaInstanceRef.current) {
-                toast.error("Pamja nuk është gati");
-                return;
-              }
-              setViewMode("sphere-ns");
-            }}
-            size="lg"
-            className="hud-glow"
-          >
-            <Compass className="h-5 w-5 mr-2" /> Sphere Veri + Jug
-          </Button>
-          <Button
-            onClick={() => {
-              if (!panoramaInstanceRef.current) {
-                toast.error("Pamja nuk është gati");
-                return;
-              }
-              setViewMode("sphere-ew");
-            }}
-            size="lg"
-            className="hud-glow"
-          >
-            <Compass className="h-5 w-5 mr-2 rotate-90" /> Sphere Lindje + Perëndim
-          </Button>
           <Button
             onClick={() => {
               if (!panoramaInstanceRef.current) {
