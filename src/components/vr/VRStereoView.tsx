@@ -40,12 +40,14 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
     camera.position.set(0, 0, 0.1);
 
-    // Stereo cameras for cardboard-style split screen (left eye + right eye)
-    const eyeSeparation = 0.064; // ~IPD in scene units
-    const leftCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
-    const rightCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
-    leftCamera.position.set(-eyeSeparation / 2, 0, 0);
-    rightCamera.position.set(eyeSeparation / 2, 0, 0);
+    // Split-screen 360°: left half shows front 180°, right half shows back 180°.
+    // Together they cover the full panorama. FOV ~140° per eye (perspective max ~179°,
+    // values >150° distort heavily). For Meta Quest / WebXR the renderer above takes over.
+    const HALF_FOV = 140;
+    const frontCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
+    const backCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
+    frontCamera.position.set(0, 0, 0);
+    backCamera.position.set(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -131,10 +133,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       const halfAspect = (w / 2) / h;
-      leftCamera.aspect = halfAspect;
-      leftCamera.updateProjectionMatrix();
-      rightCamera.aspect = halfAspect;
-      rightCamera.updateProjectionMatrix();
+      frontCamera.aspect = halfAspect;
+      frontCamera.updateProjectionMatrix();
+      backCamera.aspect = halfAspect;
+      backCamera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
@@ -147,29 +149,31 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      // Manual side-by-side stereo for cardboard / phone-in-headset
+      // Split 360° view: left half = front 180°, right half = back 180°
       const w = mount.clientWidth;
       const h = mount.clientHeight;
       const halfW = Math.floor(w / 2);
 
-      leftCamera.rotation.order = "YXZ";
-      leftCamera.rotation.y = yaw;
-      leftCamera.rotation.x = pitch;
-      rightCamera.rotation.order = "YXZ";
-      rightCamera.rotation.y = yaw;
-      rightCamera.rotation.x = pitch;
+      // Front camera looks along current yaw
+      frontCamera.rotation.order = "YXZ";
+      frontCamera.rotation.y = yaw;
+      frontCamera.rotation.x = pitch;
+      // Back camera is rotated 180° on Y axis (looks the opposite direction)
+      backCamera.rotation.order = "YXZ";
+      backCamera.rotation.y = yaw + Math.PI;
+      backCamera.rotation.x = pitch;
 
       renderer.setScissorTest(true);
-      // Left eye
+      // Left half: FRONT 180°
       renderer.setViewport(0, 0, halfW, h);
       renderer.setScissor(0, 0, halfW, h);
       renderer.clear();
-      renderer.render(scene, leftCamera);
-      // Right eye
+      renderer.render(scene, frontCamera);
+      // Right half: BACK 180°
       renderer.setViewport(halfW, 0, halfW, h);
       renderer.setScissor(halfW, 0, halfW, h);
       renderer.clear();
-      renderer.render(scene, rightCamera);
+      renderer.render(scene, backCamera);
       renderer.setScissorTest(false);
     };
     renderer.setAnimationLoop(animate);
