@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones } from "lucide-react";
+import { X, Headphones, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -16,7 +16,9 @@ interface Props {
  */
 export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   useEffect(() => {
@@ -27,6 +29,25 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       setXrSupported(false);
     }
   }, []);
+
+  // Track fullscreen state
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (e) {
+      toast.error("Fullscreen nuk u aktivizua: " + (e as Error).message);
+    }
+  };
 
   useEffect(() => {
     if (!mountRef.current) return;
