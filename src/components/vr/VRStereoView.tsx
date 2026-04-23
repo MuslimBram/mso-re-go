@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones, Orbit } from "lucide-react";
+import { X, Headphones, Compass } from "lucide-react";
 import { toast } from "sonner";
 
-export type PanoramaViewMode = "sphere" | "vr";
+export type PanoramaViewMode = "sphere-ns" | "sphere-ew" | "vr";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
@@ -15,13 +15,19 @@ interface Props {
 
 /**
  * Renders the current Street View panorama either as a split 180°+180° sphere preview
- * (front + exact opposite direction) or as immersive WebXR VR for headsets.
+ * with FIXED cardinal orientation (North+South or East+West), or as immersive WebXR VR.
  */
 export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const isVrMode = mode === "vr";
+  const isNS = mode === "sphere-ns";
+  // Front heading in radians: North = 0, East = PI/2
+  const frontHeading = isNS ? 0 : Math.PI / 2;
+  // Labels for the two panes
+  const leftLabel = isNS ? "Veri (N) 180°" : "Lindje (E) 180°";
+  const rightLabel = isNS ? "Jug (S) 180°" : "Perëndim (W) 180°";
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
