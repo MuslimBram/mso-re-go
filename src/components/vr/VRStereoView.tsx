@@ -368,6 +368,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     fovRef.current = Math.max(35, Math.min(110, fovRef.current + delta));
   };
 
+  // Keep the keyboard handler's reference to moveByHeadingOffset up-to-date
+  // (the function is recreated on each render and depends on `panorama`).
+  useEffect(() => {
+    moveByHeadingOffsetRef.current = moveByHeadingOffset;
+  });
+
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
       <div ref={mountRef} className="absolute inset-0" />
