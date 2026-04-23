@@ -185,6 +185,15 @@ function Index() {
 
         <div className="flex items-center gap-2 pointer-events-auto">
           <Button
+            onClick={() => setShowFamous((s) => !s)}
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 glass-panel"
+            title="Vende të famshme"
+          >
+            <Sparkles className="h-5 w-5" />
+          </Button>
+          <Button
             onClick={saveCurrentAsFavorite}
             variant="ghost"
             size="icon"
