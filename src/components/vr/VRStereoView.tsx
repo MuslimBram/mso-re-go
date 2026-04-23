@@ -451,7 +451,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md pointer-events-none">
         {xrSupported === false && (
           <p className="text-muted-foreground">
-            Tërhiq me mausin ose përdor butonat për të lëvizur. Vendose telefonin në syze VR (Cardboard) për përvojë të plotë.
+            Tërhiq me mausin për të rrotulluar. Përdor <b>shigjetat</b> për të ecur, <b>A/D</b> për t'u kthyer, <b>W/S</b> për lart/poshtë, <b>+/−</b> për zoom. Vendose telefonin në syze VR (Cardboard) për përvojë të plotë.
           </p>
         )}
         {xrSupported && <p className="text-muted-foreground">Shtyp "Hyr në Headset" për WebXR</p>}
