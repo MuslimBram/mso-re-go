@@ -24,6 +24,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const fovRef = useRef(75);
+  const moveByHeadingOffsetRef = useRef<(deg: number) => void>(() => {});
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
@@ -98,10 +99,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       currentPanoId = panoId;
 
       const TILE_W = 1024;
-      const TILE_H = 1024;
+      const TILE_H = 512; // 2:1 equirectangular ratio (4*1024 wide × 512 tall = 4096×2048-ish projection-friendly)
       const canvas = document.createElement("canvas");
       canvas.width = TILE_W * 4;
-      canvas.height = TILE_H;
+      canvas.height = TILE_W * 2; // full equirectangular canvas: 4096 × 2048
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
@@ -130,7 +131,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          ctx.drawImage(img, i * TILE_W, 0, TILE_W, TILE_H);
+          // Draw the 90° square tile centered vertically on the equirectangular canvas.
+          // Equirectangular vertical span = 180°; the tile covers ~90° vertically,
+          // so it occupies the middle half of the canvas height.
+          const destY = canvas.height / 4; // top quarter = sky padding
+          const destH = canvas.height / 2; // middle half = tile
+          ctx.drawImage(img, i * TILE_W, destY, TILE_W, destH);
           loaded++;
           // Re-create texture incrementally so user sees progress
           applyTexture();
@@ -194,6 +200,57 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     window.addEventListener("resize", onResize);
     onResize();
 
+    // Keyboard navigation: arrow keys = walk, A/D = turn, W/S = look up/down, +/- = zoom
+    const onKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(0);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(180);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(-90);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          moveByHeadingOffsetRef.current(90);
+          break;
+        case "a":
+        case "A":
+          yawRef.current -= THREE.MathUtils.degToRad(10);
+          break;
+        case "d":
+        case "D":
+          yawRef.current += THREE.MathUtils.degToRad(10);
+          break;
+        case "w":
+        case "W": {
+          const next = pitchRef.current + THREE.MathUtils.degToRad(10);
+          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
+          break;
+        }
+        case "s":
+        case "S": {
+          const next = pitchRef.current - THREE.MathUtils.degToRad(10);
+          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
+          break;
+        }
+        case "+":
+        case "=":
+          fovRef.current = Math.max(35, Math.min(110, fovRef.current - 8));
+          break;
+        case "-":
+        case "_":
+          fovRef.current = Math.max(35, Math.min(110, fovRef.current + 8));
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
     const animate = () => {
       if (renderer.xr.isPresenting) {
         // WebXR handles its own stereo rendering and head tracking
@@ -243,6 +300,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKeyDown);
       renderer.setAnimationLoop(null);
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
@@ -309,6 +367,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const zoom = (delta: number) => {
     fovRef.current = Math.max(35, Math.min(110, fovRef.current + delta));
   };
+
+  // Keep the keyboard handler's reference to moveByHeadingOffset up-to-date
+  // (the function is recreated on each render and depends on `panorama`).
+  useEffect(() => {
+    moveByHeadingOffsetRef.current = moveByHeadingOffset;
+  });
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
@@ -387,7 +451,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md pointer-events-none">
         {xrSupported === false && (
           <p className="text-muted-foreground">
-            Tërhiq me mausin ose përdor butonat për të lëvizur. Vendose telefonin në syze VR (Cardboard) për përvojë të plotë.
+            Tërhiq me mausin për të rrotulluar. Përdor <b>shigjetat</b> për të ecur, <b>A/D</b> për t'u kthyer, <b>W/S</b> për lart/poshtë, <b>+/−</b> për zoom. Vendose telefonin në syze VR (Cardboard) për përvojë të plotë.
           </p>
         )}
         {xrSupported && <p className="text-muted-foreground">Shtyp "Hyr në Headset" për WebXR</p>}
