@@ -185,11 +185,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       const h = mount.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      const halfAspect = (w / 2) / h;
-      frontCamera.aspect = halfAspect;
-      frontCamera.updateProjectionMatrix();
-      backCamera.aspect = halfAspect;
-      backCamera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
@@ -202,32 +197,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      // Split 360° view: left half = front 180°, right half = back 180°
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
-      const halfW = Math.floor(w / 2);
-
-      // Front camera looks along current yaw
-      frontCamera.rotation.order = "YXZ";
-      frontCamera.rotation.y = yaw;
-      frontCamera.rotation.x = pitch;
-      // Back camera is rotated 180° on Y axis (looks the opposite direction)
-      backCamera.rotation.order = "YXZ";
-      backCamera.rotation.y = yaw + Math.PI;
-      backCamera.rotation.x = pitch;
-
-      renderer.setScissorTest(true);
-      // Left half: FRONT 180°
-      renderer.setViewport(0, 0, halfW, h);
-      renderer.setScissor(0, 0, halfW, h);
+      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
+      frontMaterial.uniforms.uPitch.value = panoPitch + pitch;
+      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
+      backMaterial.uniforms.uPitch.value = panoPitch + pitch;
       renderer.clear();
-      renderer.render(scene, frontCamera);
-      // Right half: BACK 180°
-      renderer.setViewport(halfW, 0, halfW, h);
-      renderer.setScissor(halfW, 0, halfW, h);
-      renderer.clear();
-      renderer.render(scene, backCamera);
-      renderer.setScissorTest(false);
+      renderer.render(splitScene, splitCamera);
     };
     renderer.setAnimationLoop(animate);
 
