@@ -41,10 +41,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     camera.position.set(0, 0, 0.1);
 
     // Split-screen 360°: left half shows front 180°, right half shows back 180°.
-    // Together they cover the full panorama. Each camera uses an ultra-wide 180° FOV.
-    const FRONT_FOV = 180;
-    const frontCamera = new THREE.PerspectiveCamera(FRONT_FOV, (width / 2) / height, 0.1, 1100);
-    const backCamera = new THREE.PerspectiveCamera(FRONT_FOV, (width / 2) / height, 0.1, 1100);
+    // Together they cover the full panorama. FOV ~140° per eye (perspective max ~179°,
+    // values >150° distort heavily). For Meta Quest / WebXR the renderer above takes over.
+    const HALF_FOV = 140;
+    const frontCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
+    const backCamera = new THREE.PerspectiveCamera(HALF_FOV, (width / 2) / height, 0.1, 1100);
     frontCamera.position.set(0, 0, 0);
     backCamera.position.set(0, 0, 0);
 
