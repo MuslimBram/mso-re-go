@@ -7,8 +7,9 @@ import { StreetViewExplorer, type PanoState } from "@/components/vr/StreetViewEx
 import { ControlsHelp } from "@/components/vr/ControlsHelp";
 import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
 import { VRStereoView, type PanoramaViewMode } from "@/components/vr/VRStereoView";
+import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Orbit } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Compass, Sparkles } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,7 @@ function Index() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<PanoramaViewMode | null>(null);
+  const [showFamous, setShowFamous] = useState(false);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
 
