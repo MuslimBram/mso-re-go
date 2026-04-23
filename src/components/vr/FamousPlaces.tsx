@@ -137,6 +137,13 @@ function thumbUrl(p: FamousPlace, apiKey: string) {
 }
 
 export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    if (!normalizedQuery) return FAMOUS_PLACES;
+    return FAMOUS_PLACES.filter((p) => p.name.toLowerCase().includes(normalizedQuery));
+  }, [normalizedQuery]);
+
   return (
     <div className="fixed top-20 right-4 bottom-4 w-96 z-20 glass-panel rounded-2xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
@@ -148,10 +155,21 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
           <X className="h-4 w-4" />
         </Button>
       </div>
+      <div className="px-3 py-2 border-b border-border/50">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Kërko vend..."
+            className="pl-9 h-9 bg-card/40 border-border/40"
+          />
+        </div>
+      </div>
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-5">
           {CATEGORY_ORDER.map((cat) => {
-            const items = FAMOUS_PLACES.filter((p) => p.category === cat);
+            const items = filtered.filter((p) => p.category === cat);
             if (items.length === 0) return null;
             return (
               <section key={cat}>
@@ -185,6 +203,11 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
               </section>
             );
           })}
+          {filtered.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-8">
+              Asnjë rezultat për "{query}"
+            </p>
+          )}
         </div>
       </ScrollArea>
     </div>
