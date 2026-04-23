@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          heading: number | null
+          id: string
+          lat: number
+          lng: number
+          name: string
+          pano_id: string | null
+          pitch: number | null
+          thumbnail_url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          heading?: number | null
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          pano_id?: string | null
+          pitch?: number | null
+          thumbnail_url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          heading?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          pano_id?: string | null
+          pitch?: number | null
+          thumbnail_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      history: {
+        Row: {
+          id: string
+          lat: number
+          lng: number
+          name: string | null
+          pano_id: string | null
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          lat: number
+          lng: number
+          name?: string | null
+          pano_id?: string | null
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string | null
+          pano_id?: string | null
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
