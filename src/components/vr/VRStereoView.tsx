@@ -40,12 +40,13 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
     camera.position.set(0, 0, 0.1);
 
-    // Stereo cameras for cardboard-style split screen (left eye + right eye)
-    const eyeSeparation = 0.064; // ~IPD in scene units
-    const leftCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
-    const rightCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
-    leftCamera.position.set(-eyeSeparation / 2, 0, 0);
-    rightCamera.position.set(eyeSeparation / 2, 0, 0);
+    // Split-screen 360°: left half shows front 180°, right half shows back 180°.
+    // Together they cover the full panorama. Each camera uses an ultra-wide 180° FOV.
+    const FRONT_FOV = 180;
+    const frontCamera = new THREE.PerspectiveCamera(FRONT_FOV, (width / 2) / height, 0.1, 1100);
+    const backCamera = new THREE.PerspectiveCamera(FRONT_FOV, (width / 2) / height, 0.1, 1100);
+    frontCamera.position.set(0, 0, 0);
+    backCamera.position.set(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
