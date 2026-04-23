@@ -190,17 +190,16 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     onResize();
 
     const animate = () => {
-      if (isVrMode && renderer.xr.isPresenting) {
+      if (renderer.xr.isPresenting) {
         // WebXR handles its own stereo rendering
         renderer.clear();
         renderer.render(scene, camera);
         return;
       }
-      // Sphere mode: fixed cardinal orientation (independent of current heading)
-      // Front pane = North (or East), Back pane = South (or West) via uOffset = PI
-      frontMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      // Split mode: front pane = current heading + user yaw, back = +180° (uOffset)
+      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
       frontMaterial.uniforms.uPitch.value = pitch;
-      backMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
       backMaterial.uniforms.uPitch.value = pitch;
       renderer.clear();
       renderer.render(splitScene, splitCamera);
@@ -218,12 +217,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [panorama, apiKey, isVrMode, frontHeading]);
+  }, [panorama, apiKey]);
 
   const enterXR = async () => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    if (!isVrMode) return;
     const nav = navigator as Navigator & {
       xr?: { requestSession(mode: string, opts?: object): Promise<XRSession> };
     };
