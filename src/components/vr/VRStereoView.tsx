@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones, Glasses, SplitSquareHorizontal } from "lucide-react";
+import { X, Headphones } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,9 +19,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const [viewMode, setViewMode] = useState<"cardboard" | "split360">("split360");
-  const viewModeRef = useRef<"cardboard" | "split360">("split360");
-  useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
@@ -60,12 +57,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       uniform float uHeading;
       uniform float uPitch;
       uniform float uOffset;
-      uniform float uHFov;
       varying vec2 vUv;
       const float PI = 3.141592653589793;
 
       void main() {
-        float heading = uHeading + uOffset + ((vUv.x - 0.5) * uHFov);
+        float heading = uHeading + uOffset + ((vUv.x - 0.5) * PI);
         float latitude = clamp(uPitch + ((0.5 - vUv.y) * PI), -1.560796, 1.560796);
         float u = fract(heading / (2.0 * PI));
         if (u < 0.0) u += 1.0;
@@ -79,7 +75,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         uHeading: { value: 0 },
         uPitch: { value: 0 },
         uOffset: { value: 0 },
-        uHFov: { value: Math.PI },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
@@ -90,7 +85,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         uHeading: { value: 0 },
         uPitch: { value: 0 },
         uOffset: { value: Math.PI },
-        uHFov: { value: Math.PI },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
@@ -203,26 +197,10 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      const heading = panoHeading + yaw;
-      const pitchTotal = panoPitch + pitch;
-      frontMaterial.uniforms.uHeading.value = heading;
-      frontMaterial.uniforms.uPitch.value = pitchTotal;
-      backMaterial.uniforms.uHeading.value = heading;
-      backMaterial.uniforms.uPitch.value = pitchTotal;
-      if (viewModeRef.current === "cardboard") {
-        // Both eyes show the SAME direction at ~100° FOV (stereo headset feel)
-        frontMaterial.uniforms.uOffset.value = 0;
-        backMaterial.uniforms.uOffset.value = 0;
-        const fov = (100 * Math.PI) / 180;
-        frontMaterial.uniforms.uHFov.value = fov;
-        backMaterial.uniforms.uHFov.value = fov;
-      } else {
-        // Split 360°: left = current heading 180°, right = opposite 180°
-        frontMaterial.uniforms.uOffset.value = 0;
-        backMaterial.uniforms.uOffset.value = Math.PI;
-        frontMaterial.uniforms.uHFov.value = Math.PI;
-        backMaterial.uniforms.uHFov.value = Math.PI;
-      }
+      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
+      frontMaterial.uniforms.uPitch.value = panoPitch + pitch;
+      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
+      backMaterial.uniforms.uPitch.value = panoPitch + pitch;
       renderer.clear();
       renderer.render(splitScene, splitCamera);
     };
@@ -267,31 +245,9 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
           <Headphones className="h-4 w-4" />
-          <span className="text-sm font-medium">
-            {viewMode === "cardboard" ? "Cardboard Stereo" : "Split 360°"}
-          </span>
+          <span className="text-sm font-medium">VR Stereo Mode</span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
-          <div className="flex rounded-lg glass-panel overflow-hidden">
-            <Button
-              onClick={() => setViewMode("split360")}
-              variant={viewMode === "split360" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              title="Majtas: drejtimi aktual · Djathtas: 180° përballë"
-            >
-              <SplitSquareHorizontal className="h-4 w-4 mr-1" /> Split 360°
-            </Button>
-            <Button
-              onClick={() => setViewMode("cardboard")}
-              variant={viewMode === "cardboard" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-none"
-              title="Të dyja syt shohin të njëjtin drejtim (për kufje)"
-            >
-              <Glasses className="h-4 w-4 mr-1" /> Cardboard
-            </Button>
-          </div>
           {xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
@@ -302,11 +258,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
-        <p className="text-muted-foreground mb-1">
-          {viewMode === "split360"
-            ? "Majtas = drejtimi yt aktual · Djathtas = 180° përballë"
-            : "Pamje stereo për kufje VR (të dy lentet, i njëjti drejtim)"}
-        </p>
         {xrSupported === false && (
           <p className="text-muted-foreground">
             WebXR nuk u zbulua. Përdor mausin për të lëvizur. Për headset të vërtetë, hape në një browser që mbështet WebXR (Quest Browser, Chrome me HTTPS).
