@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones } from "lucide-react";
+import { X, Headphones, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveUp } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
