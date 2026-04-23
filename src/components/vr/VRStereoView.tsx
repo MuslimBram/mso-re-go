@@ -83,28 +83,58 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     let currentPanoId: string | null = null;
     let panoHeading = 0;
 
+    /**
+     * Build a full 360° equirectangular panorama from 4 Street View static images
+     * (N/E/S/W at fov=90), painted onto a canvas, then mapped onto the inverted sphere.
+     * This ensures the WHOLE world surrounds the user, not just the front-facing slice.
+     */
     const loadPanoTexture = (panoId: string) => {
       if (panoId === currentPanoId) return;
       currentPanoId = panoId;
-      const url = `https://maps.googleapis.com/maps/api/streetview?size=2048x1024&pano=${encodeURIComponent(
-        panoId
-      )}&fov=120&heading=0&pitch=0&key=${encodeURIComponent(apiKey)}`;
-      const loader = new THREE.TextureLoader();
-      loader.crossOrigin = "anonymous";
-      loader.load(
-        url,
-        (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace;
-          tex.wrapS = THREE.RepeatWrapping;
-          (sphere.material as THREE.MeshBasicMaterial).map = tex;
-          (sphere.material as THREE.MeshBasicMaterial).color.setHex(0xffffff);
-          (sphere.material as THREE.MeshBasicMaterial).needsUpdate = true;
-        },
-        undefined,
-        () => {
-          // failed silently
-        }
-      );
+
+      const TILE_W = 1024;
+      const TILE_H = 1024;
+      const canvas = document.createElement("canvas");
+      canvas.width = TILE_W * 4;
+      canvas.height = TILE_H;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Fill background dark to avoid white flash if a tile fails
+      ctx.fillStyle = "#0a0a0a";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const headings = [0, 90, 180, 270];
+      let loaded = 0;
+
+      const applyTexture = () => {
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        const mat = sphere.material as THREE.MeshBasicMaterial;
+        if (mat.map) mat.map.dispose();
+        mat.map = tex;
+        mat.color.setHex(0xffffff);
+        mat.needsUpdate = true;
+      };
+
+      headings.forEach((heading, i) => {
+        const url = `https://maps.googleapis.com/maps/api/streetview?size=640x640&pano=${encodeURIComponent(
+          panoId
+        )}&fov=90&heading=${heading}&pitch=0&key=${encodeURIComponent(apiKey)}`;
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          ctx.drawImage(img, i * TILE_W, 0, TILE_W, TILE_H);
+          loaded++;
+          // Re-create texture incrementally so user sees progress
+          applyTexture();
+        };
+        img.onerror = () => {
+          loaded++;
+        };
+        img.src = url;
+      });
     };
 
     const syncFromPanorama = () => {

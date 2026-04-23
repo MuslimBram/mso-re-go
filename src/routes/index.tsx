@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ApiKeyGate } from "@/components/vr/ApiKeyGate";
-import { SearchBar } from "@/components/vr/SearchBar";
 import { MiniMap } from "@/components/vr/MiniMap";
 import { StreetViewExplorer, type PanoState } from "@/components/vr/StreetViewExplorer";
 import { ControlsHelp } from "@/components/vr/ControlsHelp";
@@ -89,12 +88,6 @@ function Index() {
     return () => clearTimeout(t);
   }, [pano.panoId, pano.lat, pano.lng, user]);
 
-  const handleSearchSelect = useCallback((loc: { lat: number; lng: number; name: string }) => {
-    setTarget({ lat: loc.lat, lng: loc.lng, ts: Date.now() });
-    const label = loc.name && loc.name !== "undefined" ? loc.name : "vendin e zgjedhur";
-    toast.success(`Duke udhëtuar drejt ${label}`);
-  }, []);
-
   const handleMapClick = useCallback((lat: number, lng: number) => {
     setTarget({ lat, lng, ts: Date.now() });
   }, []);
@@ -180,7 +173,6 @@ function Index() {
             </div>
             <span className="font-semibold text-sm hidden sm:inline">VR Explorer</span>
           </div>
-          <SearchBar onSelect={handleSearchSelect} ready={mapsReady} />
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
