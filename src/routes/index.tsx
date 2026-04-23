@@ -275,6 +275,7 @@ function Index() {
       {/* Famous places panel */}
       {showFamous && (
         <FamousPlaces
+          apiKey={apiKey}
           onTeleport={(lat, lng, name) => {
             handleTeleport(lat, lng);
             setShowFamous(false);
