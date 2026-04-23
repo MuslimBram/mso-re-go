@@ -159,8 +159,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     let isDragging = false;
     let lastX = 0;
     let lastY = 0;
-    let yaw = 0;
-    let pitch = 0;
     const onPointerDown = (e: PointerEvent) => {
       isDragging = true;
       lastX = e.clientX;
@@ -168,9 +166,9 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     };
     const onPointerMove = (e: PointerEvent) => {
       if (!isDragging) return;
-      yaw -= (e.clientX - lastX) * 0.005;
-      pitch -= (e.clientY - lastY) * 0.005;
-      pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
+      yawRef.current -= (e.clientX - lastX) * 0.005;
+      pitchRef.current -= (e.clientY - lastY) * 0.005;
+      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
       lastX = e.clientX;
       lastY = e.clientY;
     };
