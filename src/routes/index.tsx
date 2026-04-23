@@ -298,6 +298,18 @@ function Index() {
         />
       )}
 
+      {/* Famous places panel */}
+      {showFamous && (
+        <FamousPlaces
+          onTeleport={(lat, lng, name) => {
+            handleTeleport(lat, lng);
+            setShowFamous(false);
+            toast.success(`Duke udhëtuar drejt ${name}`);
+          }}
+          onClose={() => setShowFamous(false)}
+        />
+      )}
+
       {/* Sphere / VR overlay */}
       {viewMode && panoramaInstanceRef.current && apiKey && (
         <VRStereoView
