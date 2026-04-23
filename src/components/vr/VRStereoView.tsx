@@ -206,10 +206,12 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      frontMaterial.uniforms.uPitch.value = panoPitch + pitch;
-      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      backMaterial.uniforms.uPitch.value = panoPitch + pitch;
+      // Sphere mode: fixed cardinal orientation (independent of current heading)
+      // Front pane = North (or East), Back pane = South (or West) via uOffset = PI
+      frontMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      frontMaterial.uniforms.uPitch.value = pitch;
+      backMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      backMaterial.uniforms.uPitch.value = pitch;
       renderer.clear();
       renderer.render(splitScene, splitCamera);
     };
@@ -226,7 +228,7 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [panorama, apiKey, isVrMode]);
+  }, [panorama, apiKey, isVrMode, frontHeading]);
 
   const enterXR = async () => {
     const renderer = rendererRef.current;
