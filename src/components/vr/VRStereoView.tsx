@@ -205,10 +205,17 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       // Apply user "head rotation" to both eye cameras
       leftCamera.rotation.order = "YXZ";
       rightCamera.rotation.order = "YXZ";
-      leftCamera.rotation.y = yaw;
-      leftCamera.rotation.x = pitch;
-      rightCamera.rotation.y = yaw;
-      rightCamera.rotation.x = pitch;
+      leftCamera.rotation.y = yawRef.current;
+      leftCamera.rotation.x = pitchRef.current;
+      rightCamera.rotation.y = yawRef.current;
+      rightCamera.rotation.x = pitchRef.current;
+      // Apply zoom (FOV)
+      if (leftCamera.fov !== fovRef.current) {
+        leftCamera.fov = fovRef.current;
+        rightCamera.fov = fovRef.current;
+        leftCamera.updateProjectionMatrix();
+        rightCamera.updateProjectionMatrix();
+      }
 
       const w = mount.clientWidth;
       const h = mount.clientHeight;
