@@ -263,7 +263,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
       <div ref={mountRef} className="absolute inset-0" />
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
@@ -275,6 +275,9 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
           {xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
+          <Button onClick={toggleFullscreen} variant="secondary" size="sm" title="Fullscreen">
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
           <Button onClick={onExit} variant="secondary" size="sm">
             <X className="h-4 w-4 mr-1" /> Dil
           </Button>
