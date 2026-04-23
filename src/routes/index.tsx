@@ -173,7 +173,6 @@ function Index() {
             </div>
             <span className="font-semibold text-sm hidden sm:inline">VR Explorer</span>
           </div>
-          <SearchBar onSelect={handleSearchSelect} ready={mapsReady} />
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
