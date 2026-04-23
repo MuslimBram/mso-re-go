@@ -1,6 +1,12 @@
 /// <reference types="google.maps" />
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+  }
+}
+
 let currentKey: string | null = null;
 let loadPromise: Promise<void> | null = null;
 
