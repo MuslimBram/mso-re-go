@@ -6,9 +6,9 @@ import { MiniMap } from "@/components/vr/MiniMap";
 import { StreetViewExplorer, type PanoState } from "@/components/vr/StreetViewExplorer";
 import { ControlsHelp } from "@/components/vr/ControlsHelp";
 import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
-import { VRStereoView } from "@/components/vr/VRStereoView";
+import { VRStereoView, type PanoramaViewMode } from "@/components/vr/VRStereoView";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Orbit } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +39,7 @@ function Index() {
   const [target, setTarget] = useState<{ lat: number; lng: number; ts: number } | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [vrMode, setVrMode] = useState(false);
+  const [viewMode, setViewMode] = useState<PanoramaViewMode | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
 
@@ -222,21 +222,36 @@ function Index() {
         <ControlsHelp />
       </div>
 
-      {/* Bottom-right: VR button + mini-map */}
+      {/* Bottom-right: Sphere/VR buttons + mini-map */}
       <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-3">
-        <Button
-          onClick={() => {
-            if (!panoramaInstanceRef.current) {
-              toast.error("Pamja nuk është gati");
-              return;
-            }
-            setVrMode(true);
-          }}
-          size="lg"
-          className="hud-glow pulse-ring"
-        >
-          <Headphones className="h-5 w-5 mr-2" /> Enter VR Mode
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            onClick={() => {
+              if (!panoramaInstanceRef.current) {
+                toast.error("Pamja nuk është gati");
+                return;
+              }
+              setViewMode("sphere");
+            }}
+            size="lg"
+            className="hud-glow"
+          >
+            <Orbit className="h-5 w-5 mr-2" /> Sphere 180° + 180°
+          </Button>
+          <Button
+            onClick={() => {
+              if (!panoramaInstanceRef.current) {
+                toast.error("Pamja nuk është gati");
+                return;
+              }
+              setViewMode("vr");
+            }}
+            size="lg"
+            className="hud-glow pulse-ring"
+          >
+            <Headphones className="h-5 w-5 mr-2" /> VR Headset
+          </Button>
+        </div>
         {mapsReady && (
           <MiniMap lat={pano.lat} lng={pano.lng} heading={pano.heading} onClick={handleMapClick} />
         )}
@@ -259,12 +274,13 @@ function Index() {
         />
       )}
 
-      {/* VR Stereo overlay */}
-      {vrMode && panoramaInstanceRef.current && apiKey && (
+      {/* Sphere / VR overlay */}
+      {viewMode && panoramaInstanceRef.current && apiKey && (
         <VRStereoView
           panorama={panoramaInstanceRef.current}
           apiKey={apiKey}
-          onExit={() => setVrMode(false)}
+          mode={viewMode}
+          onExit={() => setViewMode(null)}
         />
       )}
 
