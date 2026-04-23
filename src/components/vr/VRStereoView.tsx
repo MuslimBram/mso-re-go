@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones } from "lucide-react";
+import { X, Headphones, Orbit } from "lucide-react";
 import { toast } from "sonner";
+
+export type PanoramaViewMode = "sphere" | "vr";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
   apiKey: string;
+  mode: PanoramaViewMode;
   onExit: () => void;
 }
 
 /**
- * Renders the current Street View panorama as a textured sphere in Three.js
- * with stereo split-screen for VR headsets. Uses WebXR when available,
- * otherwise falls back to a side-by-side stereo viewport for cardboard-style headsets.
+ * Renders the current Street View panorama either as a split 180°+180° sphere preview
+ * (front + exact opposite direction) or as immersive WebXR VR for headsets.
  */
-export function VRStereoView({ panorama, apiKey, onExit }: Props) {
+export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const isVrMode = mode === "vr";
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
@@ -191,7 +194,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     onResize();
 
     const animate = () => {
-      if (renderer.xr.isPresenting) {
+      if (isVrMode && renderer.xr.isPresenting) {
         // WebXR handles its own stereo rendering
         renderer.clear();
         renderer.render(scene, camera);
@@ -217,11 +220,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [panorama, apiKey]);
+  }, [panorama, apiKey, isVrMode]);
 
   const enterXR = async () => {
     const renderer = rendererRef.current;
     if (!renderer) return;
+    if (!isVrMode) return;
     const nav = navigator as Navigator & {
       xr?: { requestSession(mode: string, opts?: object): Promise<XRSession> };
     };
@@ -244,11 +248,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
-          <Headphones className="h-4 w-4" />
-          <span className="text-sm font-medium">VR Stereo Mode</span>
+          {isVrMode ? <Headphones className="h-4 w-4" /> : <Orbit className="h-4 w-4" />}
+          <span className="text-sm font-medium">{isVrMode ? "VR Mode" : "Sphere 180° + 180°"}</span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
-          {xrSupported && (
+          {isVrMode && xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
           <Button onClick={onExit} variant="secondary" size="sm">
@@ -258,12 +262,17 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
-        {xrSupported === false && (
+        {!isVrMode && (
+          <p className="text-muted-foreground">
+            Majtas sheh 180° përpara sipas drejtimit aktual, djathtas sheh 180° mbrapa — bashkë bëjnë 360°.
+          </p>
+        )}
+        {isVrMode && xrSupported === false && (
           <p className="text-muted-foreground">
             WebXR nuk u zbulua. Përdor mausin për të lëvizur. Për headset të vërtetë, hape në një browser që mbështet WebXR (Quest Browser, Chrome me HTTPS).
           </p>
         )}
-        {xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
+        {isVrMode && xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
       </div>
     </div>
   );
