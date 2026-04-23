@@ -60,11 +60,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       uniform float uHeading;
       uniform float uPitch;
       uniform float uOffset;
+      uniform float uHFov;
       varying vec2 vUv;
       const float PI = 3.141592653589793;
 
       void main() {
-        float heading = uHeading + uOffset + ((vUv.x - 0.5) * PI);
+        float heading = uHeading + uOffset + ((vUv.x - 0.5) * uHFov);
         float latitude = clamp(uPitch + ((0.5 - vUv.y) * PI), -1.560796, 1.560796);
         float u = fract(heading / (2.0 * PI));
         if (u < 0.0) u += 1.0;
@@ -78,6 +79,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         uHeading: { value: 0 },
         uPitch: { value: 0 },
         uOffset: { value: 0 },
+        uHFov: { value: Math.PI },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
@@ -88,6 +90,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         uHeading: { value: 0 },
         uPitch: { value: 0 },
         uOffset: { value: Math.PI },
+        uHFov: { value: Math.PI },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
