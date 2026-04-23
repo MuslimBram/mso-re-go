@@ -7,8 +7,9 @@ import { StreetViewExplorer, type PanoState } from "@/components/vr/StreetViewEx
 import { ControlsHelp } from "@/components/vr/ControlsHelp";
 import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
 import { VRStereoView, type PanoramaViewMode } from "@/components/vr/VRStereoView";
+import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Orbit } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Compass, Sparkles } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,7 @@ function Index() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [viewMode, setViewMode] = useState<PanoramaViewMode | null>(null);
+  const [showFamous, setShowFamous] = useState(false);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
 
@@ -183,6 +185,15 @@ function Index() {
 
         <div className="flex items-center gap-2 pointer-events-auto">
           <Button
+            onClick={() => setShowFamous((s) => !s)}
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 glass-panel"
+            title="Vende të famshme"
+          >
+            <Sparkles className="h-5 w-5" />
+          </Button>
+          <Button
             onClick={saveCurrentAsFavorite}
             variant="ghost"
             size="icon"
@@ -231,12 +242,25 @@ function Index() {
                 toast.error("Pamja nuk është gati");
                 return;
               }
-              setViewMode("sphere");
+              setViewMode("sphere-ns");
             }}
             size="lg"
             className="hud-glow"
           >
-            <Orbit className="h-5 w-5 mr-2" /> Sphere 180° + 180°
+            <Compass className="h-5 w-5 mr-2" /> Sphere Veri + Jug
+          </Button>
+          <Button
+            onClick={() => {
+              if (!panoramaInstanceRef.current) {
+                toast.error("Pamja nuk është gati");
+                return;
+              }
+              setViewMode("sphere-ew");
+            }}
+            size="lg"
+            className="hud-glow"
+          >
+            <Compass className="h-5 w-5 mr-2 rotate-90" /> Sphere Lindje + Perëndim
           </Button>
           <Button
             onClick={() => {
@@ -271,6 +295,18 @@ function Index() {
           refreshKey={refreshKey}
           onTeleport={handleTeleport}
           onClose={() => setShowFavorites(false)}
+        />
+      )}
+
+      {/* Famous places panel */}
+      {showFamous && (
+        <FamousPlaces
+          onTeleport={(lat, lng, name) => {
+            handleTeleport(lat, lng);
+            setShowFamous(false);
+            toast.success(`Duke udhëtuar drejt ${name}`);
+          }}
+          onClose={() => setShowFamous(false)}
         />
       )}
 

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones, Orbit } from "lucide-react";
+import { X, Headphones, Compass } from "lucide-react";
 import { toast } from "sonner";
 
-export type PanoramaViewMode = "sphere" | "vr";
+export type PanoramaViewMode = "sphere-ns" | "sphere-ew" | "vr";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
@@ -15,13 +15,19 @@ interface Props {
 
 /**
  * Renders the current Street View panorama either as a split 180°+180° sphere preview
- * (front + exact opposite direction) or as immersive WebXR VR for headsets.
+ * with FIXED cardinal orientation (North+South or East+West), or as immersive WebXR VR.
  */
 export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const isVrMode = mode === "vr";
+  const isNS = mode === "sphere-ns";
+  // Front heading in radians: North = 0, East = PI/2
+  const frontHeading = isNS ? 0 : Math.PI / 2;
+  // Labels for the two panes
+  const leftLabel = isNS ? "Veri (N) 180°" : "Lindje (E) 180°";
+  const rightLabel = isNS ? "Jug (S) 180°" : "Perëndim (W) 180°";
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
@@ -200,10 +206,12 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
         renderer.render(scene, camera);
         return;
       }
-      frontMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      frontMaterial.uniforms.uPitch.value = panoPitch + pitch;
-      backMaterial.uniforms.uHeading.value = panoHeading + yaw;
-      backMaterial.uniforms.uPitch.value = panoPitch + pitch;
+      // Sphere mode: fixed cardinal orientation (independent of current heading)
+      // Front pane = North (or East), Back pane = South (or West) via uOffset = PI
+      frontMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      frontMaterial.uniforms.uPitch.value = pitch;
+      backMaterial.uniforms.uHeading.value = frontHeading + yaw;
+      backMaterial.uniforms.uPitch.value = pitch;
       renderer.clear();
       renderer.render(splitScene, splitCamera);
     };
@@ -220,7 +228,7 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [panorama, apiKey, isVrMode]);
+  }, [panorama, apiKey, isVrMode, frontHeading]);
 
   const enterXR = async () => {
     const renderer = rendererRef.current;
@@ -248,8 +256,10 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
-          {isVrMode ? <Headphones className="h-4 w-4" /> : <Orbit className="h-4 w-4" />}
-          <span className="text-sm font-medium">{isVrMode ? "VR Mode" : "Sphere 180° + 180°"}</span>
+          {isVrMode ? <Headphones className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
+          <span className="text-sm font-medium">
+            {isVrMode ? "VR Mode" : `Sphere ${isNS ? "Veri + Jug" : "Lindje + Perëndim"}`}
+          </span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
           {isVrMode && xrSupported && (
@@ -261,10 +271,23 @@ export function VRStereoView({ panorama, apiKey, mode, onExit }: Props) {
         </div>
       </div>
 
+      {!isVrMode && (
+        <>
+          <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+            ← {leftLabel}
+          </div>
+          <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+            {rightLabel} →
+          </div>
+        </>
+      )}
+
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
         {!isVrMode && (
           <p className="text-muted-foreground">
-            Majtas sheh 180° përpara sipas drejtimit aktual, djathtas sheh 180° mbrapa — bashkë bëjnë 360°.
+            {isNS
+              ? "Majtas sheh 180° drejt Veriut, djathtas 180° drejt Jugut — bashkë bëjnë 360°."
+              : "Majtas sheh 180° drejt Lindjes, djathtas 180° drejt Perëndimit — bashkë bëjnë 360°."}
           </p>
         )}
         {isVrMode && xrSupported === false && (
