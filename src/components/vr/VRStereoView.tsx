@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones } from "lucide-react";
+import { X, Headphones, Glasses, SplitSquareHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,6 +19,9 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [xrSupported, setXrSupported] = useState<boolean | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const [viewMode, setViewMode] = useState<"cardboard" | "split360">("split360");
+  const viewModeRef = useRef<"cardboard" | "split360">("split360");
+  useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
 
   useEffect(() => {
     const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
