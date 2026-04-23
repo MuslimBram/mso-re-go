@@ -36,13 +36,22 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     const height = mount.clientHeight;
 
     const scene = new THREE.Scene();
+    // Single camera used only for WebXR mode (XR manages stereo automatically)
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
     camera.position.set(0, 0, 0.1);
+
+    // Stereo cameras for cardboard-style split screen (left eye + right eye)
+    const eyeSeparation = 0.064; // ~IPD in scene units
+    const leftCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
+    const rightCamera = new THREE.PerspectiveCamera(75, (width / 2) / height, 0.1, 1100);
+    leftCamera.position.set(-eyeSeparation / 2, 0, 0);
+    rightCamera.position.set(eyeSeparation / 2, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
     renderer.xr.enabled = true;
+    renderer.autoClear = false;
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
