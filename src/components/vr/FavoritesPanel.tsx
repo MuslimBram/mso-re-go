@@ -45,12 +45,16 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
       if (f.data) setFavorites(f.data as FavoriteRow[]);
       if (h.data) setHistory(h.data as HistoryRow[]);
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
   }, [user, refreshKey]);
 
   const removeFavorite = async (id: string) => {
-    await supabase.from("favorites").delete().eq("id", id);
-    setFavorites((f) => f.filter((x) => x.id !== id));
+    const { error } = await supabase.from("favorites").delete().eq("id", id);
+    if (!error) {
+      setFavorites((f) => f.filter((x) => x.id !== id));
+    }
   };
 
   return (
