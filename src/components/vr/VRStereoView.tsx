@@ -244,13 +244,11 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
-          {isVrMode ? <Headphones className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
-          <span className="text-sm font-medium">
-            {isVrMode ? "VR Mode" : `Sphere ${isNS ? "Veri + Jug" : "Lindje + Perëndim"}`}
-          </span>
+          <Headphones className="h-4 w-4" />
+          <span className="text-sm font-medium">VR Headset Mode</span>
         </div>
         <div className="flex gap-2 pointer-events-auto">
-          {isVrMode && xrSupported && (
+          {xrSupported && (
             <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
           )}
           <Button onClick={onExit} variant="secondary" size="sm">
@@ -259,31 +257,20 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         </div>
       </div>
 
-      {!isVrMode && (
-        <>
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-            ← {leftLabel}
-          </div>
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
-            {rightLabel} →
-          </div>
-        </>
-      )}
+      <div className="absolute top-1/2 left-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+        ← Syri Majtas (180°)
+      </div>
+      <div className="absolute top-1/2 right-4 -translate-y-1/2 px-3 py-1.5 rounded-lg glass-panel text-xs font-semibold pointer-events-none">
+        Syri Djathtas (180°) →
+      </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md">
-        {!isVrMode && (
-          <p className="text-muted-foreground">
-            {isNS
-              ? "Majtas sheh 180° drejt Veriut, djathtas 180° drejt Jugut — bashkë bëjnë 360°."
-              : "Majtas sheh 180° drejt Lindjes, djathtas 180° drejt Perëndimit — bashkë bëjnë 360°."}
-          </p>
-        )}
-        {isVrMode && xrSupported === false && (
+        {xrSupported === false && (
           <p className="text-muted-foreground">
             WebXR nuk u zbulua. Përdor mausin për të lëvizur. Për headset të vërtetë, hape në një browser që mbështet WebXR (Quest Browser, Chrome me HTTPS).
           </p>
         )}
-        {isVrMode && xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
+        {xrSupported && <p className="text-muted-foreground">Vendos kufjet dhe shtyp "Hyr në Headset"</p>}
       </div>
     </div>
   );
