@@ -300,6 +300,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKeyDown);
       renderer.setAnimationLoop(null);
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
