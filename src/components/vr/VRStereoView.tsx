@@ -40,7 +40,8 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
     camera.position.set(0, 0, 0.1);
 
     // Non-WebXR mode uses two exact 180° panes from the equirectangular panorama:
-    // left = current heading, right = current heading + 180°.
+    // Stereoscopic split: të dy panet tregojnë TË NJËJTËN pamje (drejtimin aktual),
+    // me një ndarje të vogël horizontale (eye separation) për efekt 3D në kufje VR.
     const splitScene = new THREE.Scene();
     const splitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const splitGeometry = new THREE.PlaneGeometry(1, 2);
@@ -55,12 +56,12 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
       uniform sampler2D uTexture;
       uniform float uHeading;
       uniform float uPitch;
-      uniform float uOffset;
+      uniform float uEyeOffset;
       varying vec2 vUv;
       const float PI = 3.141592653589793;
 
       void main() {
-        float heading = uHeading + uOffset + ((vUv.x - 0.5) * PI);
+        float heading = uHeading + uEyeOffset + ((vUv.x - 0.5) * PI);
         float latitude = clamp(uPitch + ((0.5 - vUv.y) * PI), -1.560796, 1.560796);
         float u = fract(heading / (2.0 * PI));
         if (u < 0.0) u += 1.0;
@@ -68,12 +69,14 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         gl_FragColor = texture2D(uTexture, vec2(u, v));
       }
     `;
+    // Ndarje e vogël këndore mes dy syve (~3°) për perceptim thellësie në VR
+    const EYE_SEPARATION = 0.05;
     const frontMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: null },
         uHeading: { value: 0 },
         uPitch: { value: 0 },
-        uOffset: { value: 0 },
+        uEyeOffset: { value: -EYE_SEPARATION },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
@@ -83,7 +86,7 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
         uTexture: { value: null },
         uHeading: { value: 0 },
         uPitch: { value: 0 },
-        uOffset: { value: Math.PI },
+        uEyeOffset: { value: EYE_SEPARATION },
       },
       vertexShader: splitVertexShader,
       fragmentShader: splitFragmentShader,
