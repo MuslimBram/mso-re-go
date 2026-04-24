@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 export interface FamousPlace {
   name: string;
@@ -351,8 +350,11 @@ function thumbUrl(p: FamousPlace, apiKey: string) {
 
 export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
   const [query, setQuery] = useState("");
-  const [checkingPlace, setCheckingPlace] = useState<string | null>(null);
   const streetViewServiceRef = useRef<google.maps.StreetViewService | null>(null);
+  // Map of place name → availability ("ok" = has Street View, "no" = none, undefined = still checking)
+  const [availability, setAvailability] = useState<Record<string, "ok" | "no">>({});
+  // Cache the resolved nearest panorama coordinates so teleport is instant
+  const resolvedCoordsRef = useRef<Record<string, { lat: number; lng: number }>>({});
   const normalizedQuery = query.trim().toLowerCase();
 
   useEffect(() => {
@@ -361,35 +363,70 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
     }
   }, []);
 
+  // Pre-verify every place in the background when the panel opens.
+  // Hides locations without Street View coverage (like Mecca/Medina) before the user clicks.
+  useEffect(() => {
+    const svc = streetViewServiceRef.current;
+    if (!svc) return;
+    let cancelled = false;
+
+    const checkOne = (place: FamousPlace) =>
+      new Promise<void>((resolve) => {
+        svc.getPanorama(
+          {
+            location: { lat: place.lat, lng: place.lng },
+            radius: 250,
+            source: google.maps.StreetViewSource.OUTDOOR,
+          },
+          (data, status) => {
+            if (cancelled) return resolve();
+            if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
+              resolvedCoordsRef.current[place.name] = {
+                lat: data.location.latLng.lat(),
+                lng: data.location.latLng.lng(),
+              };
+              setAvailability((prev) => ({ ...prev, [place.name]: "ok" }));
+            } else {
+              setAvailability((prev) => ({ ...prev, [place.name]: "no" }));
+            }
+            resolve();
+          },
+        );
+      });
+
+    // Check in small batches to avoid hammering the Street View API
+    const run = async () => {
+      const BATCH_SIZE = 8;
+      for (let i = 0; i < FAMOUS_PLACES.length; i += BATCH_SIZE) {
+        if (cancelled) return;
+        const batch = FAMOUS_PLACES.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(checkOne));
+      }
+    };
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
-    if (!normalizedQuery) return FAMOUS_PLACES;
-    return FAMOUS_PLACES.filter((p) => p.name.toLowerCase().includes(normalizedQuery));
-  }, [normalizedQuery]);
+    // Show only places that are still being checked OR confirmed available.
+    // Hide places explicitly marked unavailable so the user never clicks a dead one.
+    const base = FAMOUS_PLACES.filter((p) => availability[p.name] !== "no");
+    if (!normalizedQuery) return base;
+    return base.filter((p) => p.name.toLowerCase().includes(normalizedQuery));
+  }, [normalizedQuery, availability]);
 
   const handleSelectPlace = (place: FamousPlace) => {
-    const streetViewService = streetViewServiceRef.current;
-    if (!streetViewService) {
-      onTeleport(place.lat, place.lng, place.name);
+    // Use the pre-resolved nearest panorama coords if available
+    const cached = resolvedCoordsRef.current[place.name];
+    if (cached) {
+      onTeleport(cached.lat, cached.lng, place.name);
       return;
     }
-
-    setCheckingPlace(place.name);
-    streetViewService.getPanorama(
-      {
-        location: { lat: place.lat, lng: place.lng },
-        radius: 250,
-        source: google.maps.StreetViewSource.OUTDOOR,
-      },
-      (data, status) => {
-        setCheckingPlace(null);
-        if (status !== google.maps.StreetViewStatus.OK || !data?.location?.latLng) {
-          toast.error(`Ky vend s'ka pamje të arritshme: ${place.name}`);
-          return;
-        }
-
-        onTeleport(data.location.latLng.lat(), data.location.latLng.lng(), place.name);
-      },
-    );
+    // Fall back to the raw coords (place is still being verified)
+    onTeleport(place.lat, place.lng, place.name);
   };
 
   return (
@@ -429,7 +466,6 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                     <button
                       key={p.name}
                       onClick={() => handleSelectPlace(p)}
-                      disabled={checkingPlace !== null}
                       className="group text-left rounded-lg overflow-hidden bg-card/40 hover:bg-accent/50 border border-border/40 transition-all hover:border-primary/40"
                     >
                       <div className="aspect-[5/3] bg-muted overflow-hidden">
@@ -445,9 +481,6 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                       </div>
                       <div className="p-2">
                         <p className="text-xs font-medium leading-tight line-clamp-2">{p.name}</p>
-                        {checkingPlace === p.name && (
-                          <p className="mt-1 text-[11px] text-muted-foreground">Po kontrollohet...</p>
-                        )}
                       </div>
                     </button>
                   ))}
