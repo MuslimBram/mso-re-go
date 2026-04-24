@@ -476,11 +476,20 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
   }, []);
 
   const filtered = useMemo(() => {
-    // Show only places that are still being checked OR confirmed available.
-    // Hide places explicitly marked unavailable so the user never clicks a dead one.
-    const base = FAMOUS_PLACES.filter((p) => availability[p.name] !== "no");
-    if (!normalizedQuery) return base;
-    return base.filter((p) => p.name.toLowerCase().includes(normalizedQuery));
+    // Keep ALL holy/islamic places visible — they are essential for pilgrimage exploration
+    // even when Street View coverage is restricted (e.g. Mecca/Medina interior).
+    // For other categories, hide explicitly unavailable items to avoid dead clicks.
+    const base = FAMOUS_PLACES.filter(
+      (p) => p.category === "islamic" || availability[p.name] !== "no",
+    );
+    const q = normalizedQuery
+      ? base.filter((p) => p.name.toLowerCase().includes(normalizedQuery))
+      : base;
+    // Alphabetical sort (ignoring leading emoji) for cleaner browsing
+    return [...q].sort((a, b) => {
+      const stripEmoji = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+      return stripEmoji(a.name).localeCompare(stripEmoji(b.name), "sq");
+    });
   }, [normalizedQuery, availability]);
 
   const handleSelectPlace = (place: FamousPlace) => {
