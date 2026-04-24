@@ -69,22 +69,49 @@ export function StreetViewExplorer({ initial, target, onChange, onPanoramaReady,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Move to target with smooth nearest panorama lookup
+  // Move to target with progressive nearest-panorama lookup.
+  // Tries OUTDOOR with growing radius, then falls back to DEFAULT (includes user-contributed
+  // panos and indoor coverage) so we almost always land somewhere near the requested place.
   useEffect(() => {
     if (!target || !panoramaRef.current || !svServiceRef.current) return;
-    svServiceRef.current.getPanorama(
-      { location: { lat: target.lat, lng: target.lng }, radius: 200, source: google.maps.StreetViewSource.OUTDOOR },
-      (data, status) => {
+    const svc = svServiceRef.current;
+    const loc = { lat: target.lat, lng: target.lng };
+    let cancelled = false;
+
+    const attempts: Array<{ radius: number; source: google.maps.StreetViewSource }> = [
+      { radius: 50, source: google.maps.StreetViewSource.OUTDOOR },
+      { radius: 250, source: google.maps.StreetViewSource.OUTDOOR },
+      { radius: 1000, source: google.maps.StreetViewSource.OUTDOOR },
+      { radius: 250, source: google.maps.StreetViewSource.DEFAULT },
+      { radius: 2000, source: google.maps.StreetViewSource.DEFAULT },
+      { radius: 5000, source: google.maps.StreetViewSource.DEFAULT },
+    ];
+
+    const tryNext = (i: number) => {
+      if (cancelled || i >= attempts.length) {
+        if (!cancelled) {
+          setNoCoverage(true);
+          onTeleportResult?.({ ok: false });
+        }
+        return;
+      }
+      const { radius, source } = attempts[i];
+      svc.getPanorama({ location: loc, radius, source }, (data, status) => {
+        if (cancelled) return;
         if (status === google.maps.StreetViewStatus.OK && data?.location?.pano) {
           panoramaRef.current!.setPano(data.location.pano);
           setNoCoverage(false);
           onTeleportResult?.({ ok: true });
         } else {
-          setNoCoverage(true);
-          onTeleportResult?.({ ok: false });
+          tryNext(i + 1);
         }
-      }
-    );
+      });
+    };
+    tryNext(0);
+
+    return () => {
+      cancelled = true;
+    };
   }, [target, onTeleportResult]);
 
   // Keyboard navigation: WASD/Arrows move, Q/E rotate, R/F pitch
