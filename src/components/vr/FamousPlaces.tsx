@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, MapPin, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export interface FamousPlace {
   name: string;
@@ -350,11 +351,46 @@ function thumbUrl(p: FamousPlace, apiKey: string) {
 
 export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
   const [query, setQuery] = useState("");
+  const [checkingPlace, setCheckingPlace] = useState<string | null>(null);
+  const streetViewServiceRef = useRef<google.maps.StreetViewService | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    if (typeof google !== "undefined" && !streetViewServiceRef.current) {
+      streetViewServiceRef.current = new google.maps.StreetViewService();
+    }
+  }, []);
+
   const filtered = useMemo(() => {
     if (!normalizedQuery) return FAMOUS_PLACES;
     return FAMOUS_PLACES.filter((p) => p.name.toLowerCase().includes(normalizedQuery));
   }, [normalizedQuery]);
+
+  const handleSelectPlace = (place: FamousPlace) => {
+    const streetViewService = streetViewServiceRef.current;
+    if (!streetViewService) {
+      onTeleport(place.lat, place.lng, place.name);
+      return;
+    }
+
+    setCheckingPlace(place.name);
+    streetViewService.getPanorama(
+      {
+        location: { lat: place.lat, lng: place.lng },
+        radius: 250,
+        source: google.maps.StreetViewSource.OUTDOOR,
+      },
+      (data, status) => {
+        setCheckingPlace(null);
+        if (status !== google.maps.StreetViewStatus.OK || !data?.location?.latLng) {
+          toast.error(`Ky vend s'ka pamje të arritshme: ${place.name}`);
+          return;
+        }
+
+        onTeleport(data.location.latLng.lat(), data.location.latLng.lng(), place.name);
+      },
+    );
+  };
 
   return (
     <div className="fixed top-20 right-4 bottom-4 w-96 z-20 glass-panel rounded-2xl flex flex-col overflow-hidden">
@@ -392,7 +428,8 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                   {items.map((p) => (
                     <button
                       key={p.name}
-                      onClick={() => onTeleport(p.lat, p.lng, p.name)}
+                      onClick={() => handleSelectPlace(p)}
+                      disabled={checkingPlace !== null}
                       className="group text-left rounded-lg overflow-hidden bg-card/40 hover:bg-accent/50 border border-border/40 transition-all hover:border-primary/40"
                     >
                       <div className="aspect-[5/3] bg-muted overflow-hidden">
@@ -408,6 +445,9 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                       </div>
                       <div className="p-2">
                         <p className="text-xs font-medium leading-tight line-clamp-2">{p.name}</p>
+                        {checkingPlace === p.name && (
+                          <p className="mt-1 text-[11px] text-muted-foreground">Po kontrollohet...</p>
+                        )}
                       </div>
                     </button>
                   ))}

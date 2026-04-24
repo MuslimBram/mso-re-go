@@ -14,6 +14,7 @@ import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast, Toaster } from "sonner";
+import logoImage from "@/assets/muslim-site-online-logo-transparent.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -41,6 +42,7 @@ function Index() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [vrOpen, setVrOpen] = useState(false);
   const [showFamous, setShowFamous] = useState(false);
+  const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
 
@@ -95,6 +97,17 @@ function Index() {
   const handleTeleport = useCallback((lat: number, lng: number) => {
     setTarget({ lat, lng, ts: Date.now() });
     setShowFavorites(false);
+  }, []);
+
+  const handleTeleportResult = useCallback(({ ok }: { ok: boolean; name?: string }) => {
+    const label = pendingPlaceNameRef.current;
+    if (!label) return;
+    if (ok) {
+      toast.success(`Duke udhëtuar drejt ${label}`);
+    } else {
+      toast.error(`Ky vend nuk ka pamje të arritshme: ${label}`);
+    }
+    pendingPlaceNameRef.current = null;
   }, []);
 
   const saveCurrentAsFavorite = async () => {
@@ -152,6 +165,7 @@ function Index() {
           target={target}
           onChange={setPano}
           onPanoramaReady={(p) => (panoramaInstanceRef.current = p)}
+          onTeleportResult={handleTeleportResult}
         />
       )}
 
@@ -254,6 +268,10 @@ function Index() {
         </div>
       </div>
 
+      <div className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 pointer-events-none">
+        <img src={logoImage} alt="Muslim Site On-line" className="h-8 w-auto opacity-80" loading="lazy" />
+      </div>
+
       {/* Side panel */}
       {showFavorites && (
         <FavoritesPanel
@@ -269,9 +287,9 @@ function Index() {
         <FamousPlaces
           apiKey={apiKey}
           onTeleport={(lat, lng, name) => {
+            pendingPlaceNameRef.current = name;
             handleTeleport(lat, lng);
             setShowFamous(false);
-            toast.success(`Duke udhëtuar drejt ${name}`);
           }}
           onClose={() => setShowFamous(false)}
         />

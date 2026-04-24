@@ -13,9 +13,10 @@ interface Props {
   target: { lat: number; lng: number; ts: number } | null;
   onChange: (state: PanoState) => void;
   onPanoramaReady: (panorama: google.maps.StreetViewPanorama) => void;
+  onTeleportResult?: (result: { ok: boolean; name?: string }) => void;
 }
 
-export function StreetViewExplorer({ initial, target, onChange, onPanoramaReady }: Props) {
+export function StreetViewExplorer({ initial, target, onChange, onPanoramaReady, onTeleportResult }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
@@ -77,12 +78,14 @@ export function StreetViewExplorer({ initial, target, onChange, onPanoramaReady 
         if (status === google.maps.StreetViewStatus.OK && data?.location?.pano) {
           panoramaRef.current!.setPano(data.location.pano);
           setNoCoverage(false);
+          onTeleportResult?.({ ok: true });
         } else {
           setNoCoverage(true);
+          onTeleportResult?.({ ok: false });
         }
       }
     );
-  }, [target]);
+  }, [target, onTeleportResult]);
 
   // Keyboard navigation: WASD/Arrows move, Q/E rotate, R/F pitch
   const moveForward = useCallback((reverse = false) => {
