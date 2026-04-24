@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Button } from "@/components/ui/button";
 import { X, Headphones, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveUp } from "lucide-react";
 import { toast } from "sonner";
+import { buildStreetViewEquirectangular } from "@/lib/streetview-equirect";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
@@ -94,58 +95,25 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
      * (N/E/S/W at fov=90), painted onto a canvas, then mapped onto the inverted sphere.
      * This ensures the WHOLE world surrounds the user, not just the front-facing slice.
      */
-    const loadPanoTexture = (panoId: string) => {
+    const loadPanoTexture = async (panoId: string) => {
       if (panoId === currentPanoId) return;
       currentPanoId = panoId;
-
-      const TILE_W = 1024;
-      const TILE_H = 512; // 2:1 equirectangular ratio (4*1024 wide × 512 tall = 4096×2048-ish projection-friendly)
-      const canvas = document.createElement("canvas");
-      canvas.width = TILE_W * 4;
-      canvas.height = TILE_W * 2; // full equirectangular canvas: 4096 × 2048
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Fill background dark to avoid white flash if a tile fails
-      ctx.fillStyle = "#0a0a0a";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const headings = [0, 90, 180, 270];
-      let loaded = 0;
-
-      const applyTexture = () => {
+      try {
+        const canvas = await buildStreetViewEquirectangular({ apiKey, panoId });
+        if (currentPanoId !== panoId) return;
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
         const mat = sphere.material as THREE.MeshBasicMaterial;
         if (mat.map) mat.map.dispose();
         mat.map = tex;
         mat.color.setHex(0xffffff);
         mat.needsUpdate = true;
-      };
-
-      headings.forEach((heading, i) => {
-        const url = `https://maps.googleapis.com/maps/api/streetview?size=640x640&pano=${encodeURIComponent(
-          panoId
-        )}&fov=90&heading=${heading}&pitch=0&key=${encodeURIComponent(apiKey)}`;
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          // Draw the 90° square tile centered vertically on the equirectangular canvas.
-          // Equirectangular vertical span = 180°; the tile covers ~90° vertically,
-          // so it occupies the middle half of the canvas height.
-          const destY = canvas.height / 4; // top quarter = sky padding
-          const destH = canvas.height / 2; // middle half = tile
-          ctx.drawImage(img, i * TILE_W, destY, TILE_W, destH);
-          loaded++;
-          // Re-create texture incrementally so user sees progress
-          applyTexture();
-        };
-        img.onerror = () => {
-          loaded++;
-        };
-        img.src = url;
-      });
+      } catch {
+        currentPanoId = null;
+        toast.error("Pamja VR nuk u ngarkua plotësisht për këtë vend");
+      }
     };
 
     const syncFromPanorama = () => {
