@@ -467,7 +467,6 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                     <button
                       key={p.name}
                       onClick={() => handleSelectPlace(p)}
-                      disabled={checkingPlace !== null}
                       className="group text-left rounded-lg overflow-hidden bg-card/40 hover:bg-accent/50 border border-border/40 transition-all hover:border-primary/40"
                     >
                       <div className="aspect-[5/3] bg-muted overflow-hidden">
@@ -483,9 +482,6 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
                       </div>
                       <div className="p-2">
                         <p className="text-xs font-medium leading-tight line-clamp-2">{p.name}</p>
-                        {checkingPlace === p.name && (
-                          <p className="mt-1 text-[11px] text-muted-foreground">Po kontrollohet...</p>
-                        )}
                       </div>
                     </button>
                   ))}
