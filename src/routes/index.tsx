@@ -299,7 +299,6 @@ function Index() {
       {vrOpen && panoramaInstanceRef.current && apiKey && (
         <VRStereoView
           panorama={panoramaInstanceRef.current}
-          apiKey={apiKey}
           onExit={() => setVrOpen(false)}
         />
       )}
