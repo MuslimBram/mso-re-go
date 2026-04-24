@@ -1,42 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X, Headphones, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveUp } from "lucide-react";
+import { X, Headphones, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveUp, MoveDown } from "lucide-react";
 import { toast } from "sonner";
-import { buildStreetViewEquirectangular } from "@/lib/streetview-equirect";
 
 interface Props {
   panorama: google.maps.StreetViewPanorama;
-  apiKey: string;
   onExit: () => void;
 }
 
 /**
- * Renders the current Street View panorama as a side-by-side stereo view (VR cardboard style).
- * Each eye renders the FULL spherical scene with a small parallax offset for 3D depth.
- * Supports WebXR for real headsets, and auto-fullscreens for immersive viewing.
+ * VR Headset Mode — renders TWO synchronized Google Street View panoramas
+ * side-by-side (one per eye), giving full 360° coverage with NO distortion.
+ * Both panoramas share position/POV with the main panorama and stay in sync.
  */
-export function VRStereoView({ panorama, apiKey, onExit }: Props) {
-  const mountRef = useRef<HTMLDivElement>(null);
+export function VRStereoView({ panorama, onExit }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [xrSupported, setXrSupported] = useState<boolean | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const camerasRef = useRef<{ left: THREE.PerspectiveCamera; right: THREE.PerspectiveCamera } | null>(null);
-  const yawRef = useRef(0);
-  const pitchRef = useRef(0);
-  const fovRef = useRef(75);
-  const moveByHeadingOffsetRef = useRef<(deg: number) => void>(() => {});
+  const leftEyeRef = useRef<HTMLDivElement>(null);
+  const rightEyeRef = useRef<HTMLDivElement>(null);
+  const leftPanoRef = useRef<google.maps.StreetViewPanorama | null>(null);
+  const rightPanoRef = useRef<google.maps.StreetViewPanorama | null>(null);
+  const syncingRef = useRef(false);
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const nav = navigator as Navigator & { xr?: { isSessionSupported(mode: string): Promise<boolean> } };
-    if (nav.xr) {
-      nav.xr.isSessionSupported("immersive-vr").then(setXrSupported).catch(() => setXrSupported(false));
-    } else {
-      setXrSupported(false);
-    }
-  }, []);
-
-  // Auto-enter fullscreen on mount
+  // Auto-enter fullscreen
   useEffect(() => {
     const enterFs = async () => {
       try {
@@ -44,267 +30,122 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
           await containerRef.current.requestFullscreen();
         }
       } catch {
-        // user may block fullscreen — ignore silently
+        /* user blocked — ignore */
       }
     };
     enterFs();
     return () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     };
   }, []);
 
+  // Build the two eye panoramas
   useEffect(() => {
-    if (!mountRef.current) return;
-    const mount = mountRef.current;
+    if (!leftEyeRef.current || !rightEyeRef.current) return;
+    const initialPos = panorama.getPosition();
+    const initialPov = panorama.getPov();
+    const initialPanoId = panorama.getPano();
+    if (!initialPos) return;
 
-    const scene = new THREE.Scene();
-
-    // Sphere with panorama texture (inverted to view from inside)
-    const geometry = new THREE.SphereGeometry(500, 60, 40);
-    geometry.scale(-1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x111111 });
-    const sphere = new THREE.Mesh(geometry, material);
-    scene.add(sphere);
-
-    // Two perspective cameras (one per eye) with small horizontal offset for parallax
-    const EYE_SEPARATION = 0.15; // small parallax for depth perception
-    const leftCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
-    const rightCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
-    leftCamera.position.set(-EYE_SEPARATION, 0, 0);
-    rightCamera.position.set(EYE_SEPARATION, 0, 0);
-    camerasRef.current = { left: leftCamera, right: rightCamera };
-
-    // Single camera used only for WebXR mode (XR manages stereo automatically)
-    const xrCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
-    xrCamera.position.set(0, 0, 0.1);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.xr.enabled = true;
-    renderer.autoClear = false;
-    mount.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-
-    let currentPanoId: string | null = null;
-    let panoHeading = 0;
-
-    /**
-     * Build a full 360° equirectangular panorama from 4 Street View static images
-     * (N/E/S/W at fov=90), painted onto a canvas, then mapped onto the inverted sphere.
-     * This ensures the WHOLE world surrounds the user, not just the front-facing slice.
-     */
-    const loadPanoTexture = async (panoId: string) => {
-      if (panoId === currentPanoId) return;
-      currentPanoId = panoId;
-      try {
-        const canvas = await buildStreetViewEquirectangular({ apiKey, panoId });
-        if (currentPanoId !== panoId) return;
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.ClampToEdgeWrapping;
-        const mat = sphere.material as THREE.MeshBasicMaterial;
-        if (mat.map) mat.map.dispose();
-        mat.map = tex;
-        mat.color.setHex(0xffffff);
-        mat.needsUpdate = true;
-      } catch {
-        currentPanoId = null;
-        toast.error("Pamja VR nuk u ngarkua plotësisht për këtë vend");
-      }
+    const commonOptions: google.maps.StreetViewPanoramaOptions = {
+      position: { lat: initialPos.lat(), lng: initialPos.lng() },
+      pov: initialPov,
+      zoom: panorama.getZoom() || 1,
+      addressControl: false,
+      fullscreenControl: false,
+      motionTracking: false,
+      motionTrackingControl: false,
+      linksControl: false,
+      panControl: false,
+      zoomControl: false,
+      enableCloseButton: false,
+      showRoadLabels: false,
+      clickToGo: false,
+      disableDefaultUI: true,
     };
 
-    const syncFromPanorama = () => {
+    const left = new google.maps.StreetViewPanorama(leftEyeRef.current, commonOptions);
+    const right = new google.maps.StreetViewPanorama(rightEyeRef.current, commonOptions);
+    if (initialPanoId) {
+      left.setPano(initialPanoId);
+      right.setPano(initialPanoId);
+    }
+    leftPanoRef.current = left;
+    rightPanoRef.current = right;
+    setReady(true);
+
+    // ---- Sync logic: any change in main panorama → both eyes
+    const syncEyesFromMain = () => {
+      if (syncingRef.current) return;
+      syncingRef.current = true;
       const id = panorama.getPano();
-      if (id) loadPanoTexture(id);
       const pov = panorama.getPov();
-      panoHeading = THREE.MathUtils.degToRad(pov.heading || 0);
-      // rotate sphere so user sees the same heading as the Street View
-      sphere.rotation.y = -panoHeading;
-    };
-
-    syncFromPanorama();
-    const posListener = panorama.addListener("position_changed", syncFromPanorama);
-    const povListener = panorama.addListener("pov_changed", syncFromPanorama);
-
-    // Mouse drag rotation (acts like rotating the head)
-    let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
-    const onPointerDown = (e: PointerEvent) => {
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
-      yawRef.current -= (e.clientX - lastX) * 0.005;
-      pitchRef.current -= (e.clientY - lastY) * 0.005;
-      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-    const onPointerUp = () => { isDragging = false; };
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-
-    const onResize = () => {
-      if (!mount) return;
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
-      // Each eye gets half the width
-      const eyeAspect = (w / 2) / h;
-      leftCamera.aspect = eyeAspect;
-      leftCamera.updateProjectionMatrix();
-      rightCamera.aspect = eyeAspect;
-      rightCamera.updateProjectionMatrix();
-      xrCamera.aspect = w / h;
-      xrCamera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener("resize", onResize);
-    onResize();
-
-    // Keyboard navigation: arrow keys = walk, A/D = turn, W/S = look up/down, +/- = zoom
-    const onKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          moveByHeadingOffsetRef.current(0);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          moveByHeadingOffsetRef.current(180);
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          moveByHeadingOffsetRef.current(-90);
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          moveByHeadingOffsetRef.current(90);
-          break;
-        case "a":
-        case "A":
-          yawRef.current -= THREE.MathUtils.degToRad(10);
-          break;
-        case "d":
-        case "D":
-          yawRef.current += THREE.MathUtils.degToRad(10);
-          break;
-        case "w":
-        case "W": {
-          const next = pitchRef.current + THREE.MathUtils.degToRad(10);
-          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
-          break;
-        }
-        case "s":
-        case "S": {
-          const next = pitchRef.current - THREE.MathUtils.degToRad(10);
-          pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
-          break;
-        }
-        case "+":
-        case "=":
-          fovRef.current = Math.max(35, Math.min(110, fovRef.current - 8));
-          break;
-        case "-":
-        case "_":
-          fovRef.current = Math.max(35, Math.min(110, fovRef.current + 8));
-          break;
+      const zoom = panorama.getZoom();
+      if (id) {
+        if (left.getPano() !== id) left.setPano(id);
+        if (right.getPano() !== id) right.setPano(id);
       }
-    };
-    window.addEventListener("keydown", onKeyDown);
-
-    const animate = () => {
-      if (renderer.xr.isPresenting) {
-        // WebXR handles its own stereo rendering and head tracking
-        renderer.clear();
-        renderer.render(scene, xrCamera);
-        return;
+      left.setPov(pov);
+      right.setPov(pov);
+      if (typeof zoom === "number") {
+        left.setZoom(zoom);
+        right.setZoom(zoom);
       }
-
-      // Apply user "head rotation" to both eye cameras
-      leftCamera.rotation.order = "YXZ";
-      rightCamera.rotation.order = "YXZ";
-      leftCamera.rotation.y = yawRef.current;
-      leftCamera.rotation.x = pitchRef.current;
-      rightCamera.rotation.y = yawRef.current;
-      rightCamera.rotation.x = pitchRef.current;
-      // Apply zoom (FOV)
-      if (leftCamera.fov !== fovRef.current) {
-        leftCamera.fov = fovRef.current;
-        rightCamera.fov = fovRef.current;
-        leftCamera.updateProjectionMatrix();
-        rightCamera.updateProjectionMatrix();
-      }
-
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
-      const halfW = Math.floor(w / 2);
-
-      renderer.setScissorTest(true);
-      // Left eye — left half of screen
-      renderer.setViewport(0, 0, halfW, h);
-      renderer.setScissor(0, 0, halfW, h);
-      renderer.clear();
-      renderer.render(scene, leftCamera);
-      // Right eye — right half of screen
-      renderer.setViewport(halfW, 0, w - halfW, h);
-      renderer.setScissor(halfW, 0, w - halfW, h);
-      renderer.clear();
-      renderer.render(scene, rightCamera);
-      renderer.setScissorTest(false);
+      syncingRef.current = false;
     };
-    renderer.setAnimationLoop(animate);
+
+    // ---- When user drags inside LEFT eye → reflect in main + right
+    const syncFromLeft = () => {
+      if (syncingRef.current) return;
+      syncingRef.current = true;
+      const pov = left.getPov();
+      const id = left.getPano();
+      panorama.setPov(pov);
+      right.setPov(pov);
+      if (id && id !== panorama.getPano()) {
+        panorama.setPano(id);
+        right.setPano(id);
+      }
+      syncingRef.current = false;
+    };
+
+    // Same for right eye
+    const syncFromRight = () => {
+      if (syncingRef.current) return;
+      syncingRef.current = true;
+      const pov = right.getPov();
+      const id = right.getPano();
+      panorama.setPov(pov);
+      left.setPov(pov);
+      if (id && id !== panorama.getPano()) {
+        panorama.setPano(id);
+        left.setPano(id);
+      }
+      syncingRef.current = false;
+    };
+
+    const l1 = panorama.addListener("pov_changed", syncEyesFromMain);
+    const l2 = panorama.addListener("position_changed", syncEyesFromMain);
+    const l3 = panorama.addListener("pano_changed", syncEyesFromMain);
+    const l4 = left.addListener("pov_changed", syncFromLeft);
+    const l5 = left.addListener("pano_changed", syncFromLeft);
+    const l6 = right.addListener("pov_changed", syncFromRight);
+    const l7 = right.addListener("pano_changed", syncFromRight);
 
     return () => {
-      google.maps.event.removeListener(posListener);
-      google.maps.event.removeListener(povListener);
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("keydown", onKeyDown);
-      renderer.setAnimationLoop(null);
-      renderer.dispose();
-      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+      [l1, l2, l3, l4, l5, l6, l7].forEach((l) => google.maps.event.removeListener(l));
     };
-  }, [panorama, apiKey]);
+  }, [panorama]);
 
-  const enterXR = async () => {
-    const renderer = rendererRef.current;
-    if (!renderer) return;
-    const nav = navigator as Navigator & {
-      xr?: { requestSession(mode: string, opts?: object): Promise<XRSession> };
-    };
-    if (!nav.xr) {
-      toast.error("WebXR nuk mbështetet në këtë browser");
-      return;
-    }
-    try {
-      const session = await nav.xr.requestSession("immersive-vr", { optionalFeatures: ["local-floor"] });
-      await renderer.xr.setSession(session as XRSession);
-      toast.success("VR Mode aktiv!");
-    } catch (e) {
-      toast.error("Nuk u arrit të hapej VR session: " + (e as Error).message);
-    }
-  };
-
-  // Move forward/backward/left/right by selecting the closest Street View link to the desired heading
+  // Move forward/backward/left/right by selecting the closest Street View link
   const moveByHeadingOffset = (offsetDeg: number) => {
     const links = panorama.getLinks();
     if (!links || links.length === 0) {
       toast.message("Nuk ka rrugë në këtë drejtim");
       return;
     }
-    // Combine the panorama heading with the user's VR yaw rotation
     const baseHeading = panorama.getPov().heading || 0;
-    const yawDeg = THREE.MathUtils.radToDeg(yawRef.current);
-    const targetHeading = (((baseHeading + yawDeg + offsetDeg) % 360) + 360) % 360;
+    const targetHeading = (((baseHeading + offsetDeg) % 360) + 360) % 360;
     let best: google.maps.StreetViewLink | null = null;
     let bestDiff = 360;
     links.forEach((link) => {
@@ -324,66 +165,88 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
   };
 
   const rotateYaw = (deltaDeg: number) => {
-    yawRef.current += THREE.MathUtils.degToRad(deltaDeg);
+    const pov = panorama.getPov();
+    panorama.setPov({ heading: ((pov.heading || 0) + deltaDeg) % 360, pitch: pov.pitch || 0 });
   };
 
   const tiltPitch = (deltaDeg: number) => {
-    const next = pitchRef.current + THREE.MathUtils.degToRad(deltaDeg);
-    pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, next));
+    const pov = panorama.getPov();
+    const next = Math.max(-89, Math.min(89, (pov.pitch || 0) + deltaDeg));
+    panorama.setPov({ heading: pov.heading || 0, pitch: next });
   };
 
-  const zoom = (delta: number) => {
-    fovRef.current = Math.max(35, Math.min(110, fovRef.current + delta));
+  const zoomBy = (delta: number) => {
+    const z = panorama.getZoom() || 1;
+    panorama.setZoom(Math.max(0, Math.min(5, z + delta)));
   };
 
-  // Keep the keyboard handler's reference to moveByHeadingOffset up-to-date
-  // (the function is recreated on each render and depends on `panorama`).
+  // Keyboard navigation
   useEffect(() => {
-    moveByHeadingOffsetRef.current = moveByHeadingOffset;
-  });
+    const onKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowUp": e.preventDefault(); moveByHeadingOffset(0); break;
+        case "ArrowDown": e.preventDefault(); moveByHeadingOffset(180); break;
+        case "ArrowLeft": e.preventDefault(); moveByHeadingOffset(-90); break;
+        case "ArrowRight": e.preventDefault(); moveByHeadingOffset(90); break;
+        case "a": case "A": rotateYaw(-10); break;
+        case "d": case "D": rotateYaw(10); break;
+        case "w": case "W": tiltPitch(10); break;
+        case "s": case "S": tiltPitch(-10); break;
+        case "+": case "=": zoomBy(0.5); break;
+        case "-": case "_": zoomBy(-0.5); break;
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
-      <div ref={mountRef} className="absolute inset-0" />
+      {/* Two synchronized Street View panoramas, one per eye */}
+      <div className="absolute inset-0 flex">
+        <div ref={leftEyeRef} className="w-1/2 h-full bg-black" />
+        <div ref={rightEyeRef} className="w-1/2 h-full bg-black" />
+      </div>
 
       {/* Vertical divider line between the two eyes */}
       <div className="absolute top-0 bottom-0 left-1/2 w-px bg-black/60 pointer-events-none" />
 
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+      {/* Top bar */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
         <div className="px-4 py-2 rounded-lg glass-panel flex items-center gap-2 pointer-events-auto">
           <Headphones className="h-4 w-4" />
           <span className="text-sm font-medium">VR Headset Mode</span>
         </div>
-        <div className="flex gap-2 pointer-events-auto">
-          {xrSupported && (
-            <Button onClick={enterXR} size="sm">Hyr në Headset</Button>
-          )}
-          <Button onClick={onExit} variant="secondary" size="sm">
-            <X className="h-4 w-4 mr-1" /> Dil
-          </Button>
-        </div>
+        <Button onClick={onExit} variant="secondary" size="sm" className="pointer-events-auto">
+          <X className="h-4 w-4 mr-1" /> Dil
+        </Button>
       </div>
 
-      {/* VR controls — duplicated in BOTH eye halves so they appear inside each lens */}
+      {/* Help text */}
+      {ready && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md pointer-events-none z-10">
+          <p className="text-muted-foreground">
+            Tërhiq me mausin për të rrotulluar. <b>Shigjetat</b> = ec, <b>A/D</b> = rrotullo, <b>W/S</b> = lart/poshtë, <b>+/−</b> = zoom.
+          </p>
+        </div>
+      )}
+
+      {/* Controls duplicated in BOTH eye halves so they appear inside each lens of a VR headset */}
       {[0, 1].map((eye) => (
         <div
           key={eye}
-          className="absolute bottom-6 pointer-events-none"
-          style={{
-            left: eye === 0 ? "0%" : "50%",
-            width: "50%",
-          }}
+          className="absolute bottom-6 pointer-events-none z-10"
+          style={{ left: eye === 0 ? "0%" : "50%", width: "50%" }}
         >
           <div className="flex items-end justify-between px-6 gap-3">
-            {/* Movement pad (left side of lens) */}
+            {/* Movement pad */}
             <div className="pointer-events-auto grid grid-cols-3 gap-1.5">
               <div />
               <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(0)} title="Para">
                 <ArrowUp className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(15)} title="Lart">
-                <MoveUp className="h-4 w-4" />
-              </Button>
+              <div />
               <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(-90)} title="Majtas">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -395,14 +258,24 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
               </Button>
             </div>
 
-            {/* Rotate + zoom (right side of lens) */}
+            {/* Look + zoom */}
             <div className="pointer-events-auto flex flex-col gap-1.5 items-center">
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoom(-8)} title="Zmadho">
-                <Plus className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoom(8)} title="Zvogëlo">
-                <Minus className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1.5">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(0.5)} title="Zmadho">
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(-0.5)} title="Zvogëlo">
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-1.5">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(15)} title="Shiko lart">
+                  <MoveUp className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(-15)} title="Shiko poshtë">
+                  <MoveDown className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="flex gap-1.5">
                 <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => rotateYaw(-15)} title="Rrotullo majtas">
                   <ArrowLeft className="h-3.5 w-3.5" />
@@ -415,15 +288,6 @@ export function VRStereoView({ panorama, apiKey, onExit }: Props) {
           </div>
         </div>
       ))}
-
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg glass-panel text-xs text-center max-w-md pointer-events-none">
-        {xrSupported === false && (
-          <p className="text-muted-foreground">
-            Tërhiq me mausin për të rrotulluar. Përdor <b>shigjetat</b> për të ecur, <b>A/D</b> për t'u kthyer, <b>W/S</b> për lart/poshtë, <b>+/−</b> për zoom. Vendose telefonin në syze VR (Cardboard) për përvojë të plotë.
-          </p>
-        )}
-        {xrSupported && <p className="text-muted-foreground">Shtyp "Hyr në Headset" për WebXR</p>}
-      </div>
     </div>
   );
 }
