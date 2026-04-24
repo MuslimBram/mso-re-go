@@ -14,7 +14,7 @@ import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast, Toaster } from "sonner";
-import logoImage from "@/assets/muslim-site-online-logo.png";
+import logoImage from "@/assets/muslim-site-online-logo-transparent.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -268,8 +268,8 @@ function Index() {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 z-10 translate-y-full pt-4 -translate-x-1/2 pointer-events-none">
-        <img src={logoImage} alt="Muslim Site On-line" className="h-9 w-auto opacity-85" loading="lazy" />
+      <div className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 pointer-events-none">
+        <img src={logoImage} alt="Muslim Site On-line" className="h-8 w-auto opacity-80" loading="lazy" />
       </div>
 
       {/* Side panel */}
