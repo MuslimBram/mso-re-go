@@ -437,26 +437,39 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
 
     const checkOne = (place: FamousPlace) =>
       new Promise<void>((resolve) => {
-        svc.getPanorama(
-          {
-            location: { lat: place.lat, lng: place.lng },
-            radius: 250,
-            source: google.maps.StreetViewSource.OUTDOOR,
-          },
-          (data, status) => {
-            if (cancelled) return resolve();
-            if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
-              resolvedCoordsRef.current[place.name] = {
-                lat: data.location.latLng.lat(),
-                lng: data.location.latLng.lng(),
-              };
-              setAvailability((prev) => ({ ...prev, [place.name]: "ok" }));
-            } else {
-              setAvailability((prev) => ({ ...prev, [place.name]: "no" }));
-            }
-            resolve();
-          },
-        );
+        // Progressive search: tight outdoor → wider outdoor → any nearby pano (up to 5km).
+        // This way Mecca/Medina/etc. resolve to the nearest available viewpoint instead of failing.
+        const attempts: Array<{ radius: number; source: google.maps.StreetViewSource }> = [
+          { radius: 100, source: google.maps.StreetViewSource.OUTDOOR },
+          { radius: 500, source: google.maps.StreetViewSource.OUTDOOR },
+          { radius: 500, source: google.maps.StreetViewSource.DEFAULT },
+          { radius: 2500, source: google.maps.StreetViewSource.DEFAULT },
+          { radius: 5000, source: google.maps.StreetViewSource.DEFAULT },
+        ];
+        const tryNext = (i: number) => {
+          if (cancelled) return resolve();
+          if (i >= attempts.length) {
+            setAvailability((prev) => ({ ...prev, [place.name]: "no" }));
+            return resolve();
+          }
+          const { radius, source } = attempts[i];
+          svc.getPanorama(
+            { location: { lat: place.lat, lng: place.lng }, radius, source },
+            (data, status) => {
+              if (cancelled) return resolve();
+              if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
+                resolvedCoordsRef.current[place.name] = {
+                  lat: data.location.latLng.lat(),
+                  lng: data.location.latLng.lng(),
+                };
+                setAvailability((prev) => ({ ...prev, [place.name]: "ok" }));
+                return resolve();
+              }
+              tryNext(i + 1);
+            },
+          );
+        };
+        tryNext(0);
       });
 
     // Check in small batches to avoid hammering the Street View API
