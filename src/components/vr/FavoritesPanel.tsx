@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Star, Trash2, MapPin, History as HistoryIcon, X, LogIn } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Star, Trash2, MapPin, History as HistoryIcon, X, LogIn, ArrowDownAZ, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -34,6 +34,7 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
   const [favorites, setFavorites] = useState<FavoriteRow[]>([]);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sortMode, setSortMode] = useState<"alpha" | "recent">("alpha");
 
   useEffect(() => {
     if (!user) return;
@@ -57,10 +58,22 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
     }
   };
 
+  const sortedFavorites = useMemo(() => {
+    if (sortMode === "alpha") {
+      return [...favorites].sort((a, b) =>
+        a.name.localeCompare(b.name, "sq", { sensitivity: "base" }),
+      );
+    }
+    return favorites; // already ordered by created_at desc from query
+  }, [favorites, sortMode]);
+
   return (
     <div className="absolute top-0 right-0 h-full w-80 glass-panel border-l z-20 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-foreground/10">
-        <h2 className="font-semibold">Bibliotekë</h2>
+        <div className="flex items-center gap-2">
+          <Star className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold">Bibliotekë</h2>
+        </div>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
@@ -109,8 +122,35 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
               <p className="text-center text-sm text-muted-foreground py-8">Histori bosh.</p>
             )}
 
+            {tab === "favorites" && favorites.length > 0 && (
+              <div className="flex items-center justify-end gap-1 px-2 pb-2">
+                <button
+                  onClick={() => setSortMode("alpha")}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                    sortMode === "alpha"
+                      ? "bg-primary/20 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Renditje alfabetike"
+                >
+                  <ArrowDownAZ className="h-3 w-3" /> A–Z
+                </button>
+                <button
+                  onClick={() => setSortMode("recent")}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                    sortMode === "recent"
+                      ? "bg-primary/20 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Më të rejat të parat"
+                >
+                  <Clock className="h-3 w-3" /> Të reja
+                </button>
+              </div>
+            )}
+
             {tab === "favorites" &&
-              favorites.map((f) => (
+              sortedFavorites.map((f) => (
                 <div key={f.id} className="group flex items-center gap-2 p-3 rounded-lg hover:bg-foreground/5 transition-colors">
                   <button onClick={() => onTeleport(f.lat, f.lng)} className="flex-1 text-left flex items-start gap-2">
                     <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
