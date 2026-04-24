@@ -122,8 +122,35 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
               <p className="text-center text-sm text-muted-foreground py-8">Histori bosh.</p>
             )}
 
+            {tab === "favorites" && favorites.length > 0 && (
+              <div className="flex items-center justify-end gap-1 px-2 pb-2">
+                <button
+                  onClick={() => setSortMode("alpha")}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                    sortMode === "alpha"
+                      ? "bg-primary/20 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Renditje alfabetike"
+                >
+                  <ArrowDownAZ className="h-3 w-3" /> A–Z
+                </button>
+                <button
+                  onClick={() => setSortMode("recent")}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                    sortMode === "recent"
+                      ? "bg-primary/20 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Më të rejat të parat"
+                >
+                  <Clock className="h-3 w-3" /> Të reja
+                </button>
+              </div>
+            )}
+
             {tab === "favorites" &&
-              favorites.map((f) => (
+              sortedFavorites.map((f) => (
                 <div key={f.id} className="group flex items-center gap-2 p-3 rounded-lg hover:bg-foreground/5 transition-colors">
                   <button onClick={() => onTeleport(f.lat, f.lng)} className="flex-1 text-left flex items-start gap-2">
                     <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
