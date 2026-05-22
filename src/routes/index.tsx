@@ -167,6 +167,7 @@ function Index() {
 
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
+      <h1 className="sr-only">VR Explorer — Eksploro botën në Street View 360°</h1>
       {mapsReady && (
         <StreetViewExplorer
           initial={DEFAULT_LOCATION}
@@ -204,6 +205,7 @@ function Index() {
             size="icon"
             className="h-11 w-11 glass-panel"
             title="Vende të famshme"
+            aria-label="Vende të famshme"
           >
             <Sparkles className="h-5 w-5" />
           </Button>
@@ -213,6 +215,7 @@ function Index() {
             size="icon"
             className="h-11 w-11 glass-panel"
             title="Ruaj si favorite"
+            aria-label="Ruaj si favorite"
           >
             <Star className="h-5 w-5" />
           </Button>
@@ -222,21 +225,22 @@ function Index() {
             size="icon"
             className="h-11 w-11 glass-panel"
             title="Bibliotekë"
+            aria-label="Hap bibliotekën"
           >
             <Library className="h-5 w-5" />
           </Button>
           {user ? (
-            <Button onClick={handleSignOut} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Çkyçu">
+            <Button onClick={handleSignOut} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Çkyçu" aria-label="Çkyçu">
               <LogOut className="h-5 w-5" />
             </Button>
           ) : (
             <Link to="/auth">
-              <Button variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Kyçu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Kyçu" aria-label="Kyçu">
                 <LogIn className="h-5 w-5" />
               </Button>
             </Link>
           )}
-          <Button onClick={handleClearKey} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Cilësimet">
+          <Button onClick={handleClearKey} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Cilësimet" aria-label="Cilësimet">
             <Settings className="h-5 w-5" />
           </Button>
         </div>
