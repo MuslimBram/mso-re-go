@@ -74,7 +74,11 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
           <Star className="h-4 w-4 text-primary" />
           <h2 className="font-semibold">Bibliotekë</h2>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Mbyll bibliotekën"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -164,6 +168,7 @@ export function FavoritesPanel({ user, refreshKey, onTeleport, onClose }: Props)
                   <button
                     onClick={() => removeFavorite(f.id)}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                  aria-label={`Hiq ${f.name} nga favorites`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

@@ -13,6 +13,7 @@ export function ControlsHelp() {
         onClick={() => setOpen(true)}
         className="h-11 w-11 glass-panel"
         title="Kontrollet"
+        aria-label="Kontrollet"
       >
         <Keyboard className="h-5 w-5" />
       </Button>
@@ -28,8 +29,12 @@ export function ControlsHelp() {
   return (
     <div className="p-4 rounded-xl glass-panel hud-glow w-72 text-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold">Kontrollet</h3>
-        <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+        <h2 className="font-semibold text-base">Kontrollet</h2>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Mbyll kontrollet"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
