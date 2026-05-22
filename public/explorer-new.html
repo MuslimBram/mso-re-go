@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shqipëria 360° – Eksploro me Syze VR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: rgba(15, 23, 42, 0.75);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #f59e0b;
+            --accent2: #ef4444;
+            --blue: #3b82f6;
+            --cyan: #06b6d4;
+            --card-radius: 28px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: white;
+            background: #000;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── BACKGROUND 360° ───────────────────── */
+        .bg360 {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+        }
+        .bg360 iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            transform: scale(1.25);
+            filter: brightness(0.35) blur(1.5px);
+            pointer-events: none;
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.35) 40%, rgba(0, 0, 0, 0.85) 100%),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.85));
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* ── CONTAINER ──────────────────────────── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── HERO ────────────────────────────────── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 5.5rem);
+            line-height: 1.15;
+            max-width: 1200px;
+            font-weight: 800;
+            text-shadow: 0 12px 50px rgba(0, 0, 0, 0.75);
+            letter-spacing: -0.02em;
+        }
+        .hero p {
+            margin-top: 28px;
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: #cbd5e1;
+            max-width: 850px;
+            padding: 0 20px;
+        }
+
+        /* ── SPHERE ──────────────────────────────── */
+        .sphere-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+        }
+        .sphere {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 18px;
+            background:
+                radial-gradient(circle at 35% 30%, #ffffff 0%, #7dd3fc 12%, #38bdf8 22%, #2563eb 45%, #1d4ed8 60%, #0f172a 100%);
+            box-shadow:
+                inset -30px -30px 70px rgba(0, 0, 0, 0.55),
+                inset 20px 20px 60px rgba(255, 255, 255, 0.18),
+                0 0 70px rgba(59, 130, 246, 0.55);
+            animation: rotateSphere 12s linear infinite;
+            transform-style: preserve-3d;
+            overflow: hidden;
+        }
+        .sphere::before {
+            content: "";
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+        .sphere::after {
+            content: "";
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            top: 26px;
+            left: 38px;
+            filter: blur(10px);
+        }
+        .sphere-text {
+            position: absolute;
+            z-index: 5;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            text-shadow:
+                0 0 10px rgba(255, 255, 255, 0.8),
+                0 0 30px rgba(59, 130, 246, 0.8),
+                0 5px 20px rgba(0, 0, 0, 0.7);
+        }
+        @keyframes rotateSphere {
+            0% {
+                transform: rotateY(0deg);
+            }
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+
+        /* ── SCROLL INDICATOR ───────────────────── */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounceDown 2s ease-in-out infinite;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 2;
+        }
+        @keyframes bounceDown {
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                transform: translateX(-50%) translateY(16px);
+            }
+        }
+
+        /* ── SECTION ─────────────────────────────── */
+        .section {
+            padding: 60px 0 100px;
+            position: relative;
+            z-index: 1;
+        }
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .section-title h2 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            margin-bottom: 14px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .section-title p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+
+        /* ── CONTROLS ────────────────────────────── */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+            max-width: 420px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        .search-box input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+            background: rgba(15, 23, 42, 0.85);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .filter-chip-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-chip {
+            padding: 9px 18px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(12px);
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .filter-chip.active,
+        .filter-chip:hover {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: var(--accent);
+            color: #fbbf24;
+            box-shadow: 0 0 22px rgba(245, 158, 11, 0.2);
+        }
+        .btn {
+            padding: 12px 22px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(245, 158, 11, 0.45);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+        .btn-outline {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: #fbbf24;
+        }
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.82rem;
+            border-radius: 10px;
+        }
+
+        /* ── GRID ─────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+            gap: 32px;
+        }
+        .card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: var(--transition);
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-10px) scale(1.015);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .card-iframe-wrap {
+            width: 100%;
+            height: 260px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            background: #000;
+        }
+        .card-iframe-wrap iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            transition: transform 0.5s ease;
+        }
+        .card:hover .card-iframe-wrap iframe {
+            transform: scale(1.04);
+        }
+        .card-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            box-shadow: 0 5px 22px rgba(59, 130, 246, 0.45);
+            z-index: 2;
+            pointer-events: none;
+            letter-spacing: 0.03em;
+        }
+        .card-actions {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            display: flex;
+            gap: 7px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 3;
+        }
+        .card:hover .card-actions {
+            opacity: 1;
+        }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(14px);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+        .action-btn:hover {
+            background: rgba(245, 158, 11, 0.9);
+            transform: scale(1.12);
+            color: #000;
+        }
+        .action-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.9);
+            color: #fff;
+        }
+        .action-btn.expand-btn {
+            background: rgba(59, 130, 246, 0.7);
+        }
+        .action-btn.expand-btn:hover {
+            background: rgba(59, 130, 246, 0.95);
+            color: #fff;
+        }
+        .card-content {
+            padding: 20px 22px 22px;
+        }
+        .card-content h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .card-content p {
+            color: #cbd5e1;
+            line-height: 1.65;
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .location-tag {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #f59e0b;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+        .type-badge {
+            padding: 5px 12px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: #fbbf24;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── EMPTY STATE ──────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 70px 20px;
+            color: #64748b;
+            grid-column: 1 / -1;
+        }
+        .empty-state .icon {
+            font-size: 4.5rem;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.7;
+        }
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+
+        /* ── MODALS ────────────────────────────────── */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.93);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            width: 100%;
+            max-width: 1300px;
+            height: 85vh;
+            background: #0a0f1a;
+            border-radius: 22px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 35px 70px rgba(0, 0, 0, 0.65);
+            animation: modalIn 0.35s ease;
+        }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.93);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 22px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent);
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .modal-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(12px);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 1.1rem;
+        }
+        .modal-btn:hover {
+            background: rgba(245, 158, 11, 0.8);
+            color: #000;
+        }
+        .modal-btn.close-btn:hover {
+            background: rgba(239, 68, 68, 0.8);
+            color: #fff;
+        }
+        .modal-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Edit / Add modal */
+        .form-modal .modal-content {
+            max-width: 620px;
+            height: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .edit-form {
+            padding: 30px 28px;
+        }
+        .edit-form h2 {
+            margin-bottom: 22px;
+            color: #f59e0b;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .form-group {
+            margin-bottom: 17px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+        .form-group select option {
+            background: #1e293b;
+            color: #fff;
+        }
+        .image-preview {
+            width: 100%;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 10px;
+            border: 2px dashed rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.4);
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-preview .placeholder {
+            color: #64748b;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .form-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* ── TOAST ─────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 24px;
+            border-radius: 14px;
+            color: #fff;
+            font-weight: 500;
+            z-index: 2000;
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .toast.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        /* ── FOOTER ────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 40px 20px 50px;
+            color: #94a3b8;
+            position: relative;
+            z-index: 1;
+            font-size: 0.9rem;
+        }
+
+        /* ── RESPONSIVE ────────────────────────────── */
+        @media (max-width: 900px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .sphere {
+                width: 120px;
+                height: 120px;
+                margin: 0 10px;
+            }
+            .sphere-text {
+                font-size: 1.3rem;
+            }
+            .section-title h2 {
+                font-size: 1.8rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: 100%;
+                width: 100%;
+            }
+            .filter-chip-group {
+                justify-content: center;
+            }
+            .modal-content {
+                height: 70vh;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            .sphere {
+                width: 80px;
+                height: 80px;
+                margin: 0 6px;
+            }
+            .sphere::before {
+                width: 60px;
+                height: 60px;
+            }
+            .sphere::after {
+                width: 30px;
+                height: 30px;
+                top: 12px;
+                left: 16px;
+            }
+            .sphere-text {
+                font-size: 0.9rem;
+            }
+            .card-iframe-wrap {
+                height: 200px;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- BACKGROUND 360° -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="bg360">
+        <iframe src="https://momento360.com/e/u/4d8f6bb53d83455b85e4f4f53cb4c1c0?utm_campaign=embed&utm_source=other&heading=0&pitch=0&field-of-view=75"
+        allowfullscreen loading="lazy">
+    </iframe>
+</div>
+<div class="overlay"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- HERO -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="hero">
+    <h1>
+        Eksploro
+        <span class="sphere-wrap">
+            <div class="sphere">
+                <div class="sphere-text">360°</div>
+            </div>
+        </span>
+        Gradë me Syze VR
+    </h1>
+    <p>
+        Hyr në një eksperiencë immersive VR dhe eksploro vendet më të bukura turistike të Shqipërisë me pamje sferike 360°. Shto, edito dhe menaxho destinacionet e tua.
+    </p>
+    <div class="scroll-indicator" onclick="document.getElementById('galeria').scrollIntoView({behavior:'smooth'})" title="Zbrit te galeria">⌄</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- GALERIA -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="section" id="galeria">
+    <div class="container">
+        <div class="section-title">
+            <h2>🌍 Vende Turistike 360°</h2>
+            <p>Kliko mbi panoramat për të eksploruar me mouse, telefon ose syze VR. Edito dhe menaxho koleksionin tënd.</p>
+        </div>
+
+        <!-- Kontrollet -->
+        <div class="controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Kërko vende turistike..." oninput="kerko()">
+            </div>
+            <div class="filter-chip-group" id="filterChips">
+                <button class="filter-chip active" data-filter="all">🌟 Të Gjitha</button>
+                <button class="filter-chip" data-filter="Video 360°">🎬 Video 360°</button>
+                <button class="filter-chip" data-filter="Street View">🗺️ Street View</button>
+                <button class="filter-chip" data-filter="VR 360°">🥽 VR 360°</button>
+                <button class="filter-chip" data-filter="Panoramë">🖼️ Panoramë</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="eksportoJSON()" title="Eksporto të dhënat">📥 Eksporto</button>
+                <button class="btn btn-outline btn-sm" onclick="importoJSON()" title="Importo të dhëna">📤 Importo</button>
+                <button class="btn btn-primary" onclick="hapShtoModal()">
+                    <span>+</span> Shto Vend të Ri
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid-i i kartave -->
+        <div class="grid" id="gallery">
+            <!-- Kartat ngarkohen me JavaScript -->
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: SHIKUESI 360° -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal" id="viewerModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title" id="viewerTitle">Titulli</div>
+            <div class="modal-actions" style="display:flex;gap:8px;">
+                <button class="modal-btn" onclick="toggleFullscreenIframe()" title="Fullscreen">⛶</button>
+                <button class="modal-btn close-btn" onclick="mbyllModal('viewerModal')" title="Mbyll">✕</button>
+            </div>
+        </div>
+        <iframe id="viewerIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking; fullscreen" allowfullscreen loading="lazy"></iframe>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: EDITO -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal form-modal" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">✏️ Edito Vendin</div>
+            <div class="modal-actions">
+                <button class="modal-btn close-btn" onclick="mbyllModal('editModal')" title="Mbyll">✕</button>
+            </div>
+        </div>
+        <div class="edit-form">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>Titulli *</label>
+                <input type="text" id="editTitulli" placeholder="P.sh. Kalaja e Krujës">
+            </div>
+            <div class="form-group">
+                <label>Përshkrimi</label>
+                <textarea id="editPershkrimi" placeholder="Përshkrim i shkurtër i vendit..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL e Imazhit (foto paraprake – për referencë)</label>
+                <input type="text" id="editImazh" placeholder="https://..." oninput="updateEditPreview()">
+                <div class="image-preview" id="editImagePreview">
+                    <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>URL e Iframe 360° *</label>
+                <input type="text" id="editIframe" placeholder="https://www.youtube.com/embed/... ose momento360/Google Maps">
+            </div>
+            <div class="form-group">
+                <label>Lokacioni</label>
+                <input type="text" id="editLokacioni" placeholder="P.sh. Krujë, Shqipëri">
+            </div>
+            <div class="form-group">
+                <label>Tipi</label>
+                <select id="editTipi">
+                    <option value="Video 360°">🎬 Video 360°</option>
+                    <option value="Street View">🗺️ Street View</option>
+                    <option value="VR 360°">🥽 VR 360°</option>
+                    <option value="Panoramë">🖼️ Panoramë</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="mbyllModal('editModal')">Anulo</button>
+                <button class="btn btn-primary" onclick="ruajEditimin()">💾 Ruaj Ndryshimet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: SHTO -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal form-modal" id="addModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">➕ Shto Vend të Ri 360°</div>
+            <div class="modal-actions">
+                <button class="modal-btn close-btn" onclick="mbyllModal('addModal')" title="Mbyll">✕</button>
+            </div>
+        </div>
+        <div class="edit-form">
+            <div class="form-group">
+                <label>Titulli *</label>
+                <input type="text" id="addTitulli" placeholder="P.sh. Kalaja e Krujës">
+            </div>
+            <div class="form-group">
+                <label>Përshkrimi</label>
+                <textarea id="addPershkrimi" placeholder="Përshkrim i shkurtër..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL e Imazhit (foto paraprake)</label>
+                <input type="text" id="addImazh" placeholder="https://..." oninput="updateAddPreview()">
+                <div class="image-preview" id="addImagePreview">
+                    <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>URL e Iframe 360° *</label>
+                <input type="text" id="addIframe" placeholder="https://www.youtube.com/embed/... ose momento360/Google Maps">
+            </div>
+            <div class="form-group">
+                <label>Lokacioni</label>
+                <input type="text" id="addLokacioni" placeholder="P.sh. Krujë, Shqipëri">
+            </div>
+            <div class="form-group">
+                <label>Tipi</label>
+                <select id="addTipi">
+                    <option value="Video 360°">🎬 Video 360°</option>
+                    <option value="Street View">🗺️ Street View</option>
+                    <option value="VR 360°">🥽 VR 360°</option>
+                    <option value="Panoramë">🖼️ Panoramë</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="mbyllModal('addModal')">Anulo</button>
+                <button class="btn btn-primary" onclick="shtoVend()">➕ Shto Vendin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TOAST -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════ -->
+<footer>
+    © 2026 Shqipëria VR 360° • Web App immersive për eksplorim virtual • Të dhënat ruhen në pajisjen tënde
+</footer>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCRIPTS -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+    (function() {
+        // ─── TË DHËNAT FILLESTARE ────────────────────
+        const defaultVendet = [{
+            id: 1,
+            titulli: '🏙️ Tirana – Sheshi Skënderbej',
+            pershkrimi: 'Pamje immersive sferike e kryeqytetit shqiptar me eksperiencë virtuale VR. Sheshi Skënderbej, Piramida dhe Blloku.',
+            imazh: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80',
+            iframe: 'https://momento360.com/e/u/4d8f6bb53d83455b85e4f4f53cb4c1c0?utm_campaign=embed&utm_source=other',
+            lokacioni: 'Tiranë, Shqipëri',
+            tipi: 'VR 360°'
+        }, {
+            id: 2,
+            titulli: '🏰 Berati – Qyteti i Njëmijë Dritareve',
+            pershkrimi: 'Eksploro qytetin e UNESCO-s me pamje panoramike dhe arkitekturë tradicionale osmane. Kalaja dominon qytetin.',
+            imazh: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/ynMT_m3OV1I',
+            lokacioni: 'Berat, Shqipëri',
+            tipi: 'Video 360°'
+        }, {
+            id: 3,
+            titulli: '🪨 Gjirokastra – Qyteti i Gurtë',
+            pershkrimi: 'Pamje 360° të qytetit historik me rrugë kalldrëmi, shtëpi me tjegulla të zeza dhe kala mesjetare.',
+            imazh: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/sZt0uE_uIzU',
+            lokacioni: 'Gjirokastër, Shqipëri',
+            tipi: 'Video 360°'
+        }, {
+            id: 4,
+            titulli: '🏖️ Ksamil – Riviera Shqiptare',
+            pershkrimi: 'Shijo ujërat kristal dhe ishujt magjikë të rivierës shqiptare në VR. "Maldivet e Shqipërisë".',
+            imazh: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/vR45rCvp-Bc',
+            lokacioni: 'Ksamil, Sarandë',
+            tipi: 'Video 360°'
+        }, {
+            id: 5,
+            titulli: '🏔️ Valbona – Alpet Shqiptare',
+            pershkrimi: 'Eksploro Alpet Shqiptare me një panoramë të plotë immersive 360 gradë. Parku Kombëtar i Valbonës.',
+            imazh: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/5qap5aO4i9A',
+            lokacioni: 'Valbonë, Tropojë',
+            tipi: 'Video 360°'
+        }, {
+            id: 6,
+            titulli: '🏛️ Durrësi – Amfiteatri Romak',
+            pershkrimi: 'Pamje immersive Street View pranë amfiteatrit dhe bregdetit të Durrësit. Qyteti më i vjetër i Shqipërisë.',
+            imazh: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+            iframe: 'https://www.google.com/maps/embed?pb=!4v1700000000000!6m8!1m7!1sCAoSLEFGMVFpcE9aMGtV!2m2!1d41.323!2d19.441!3f340!4f0!5f0.7820865974627469',
+            lokacioni: 'Durrës, Shqipëri',
+            tipi: 'Street View'
+        }, {
+            id: 7,
+            titulli: '🏯 Kalaja e Krujës – Skënderbeu',
+            pershkrimi: 'Kalaja historike ku Gjergj Kastrioti mbrojti Shqipërinë për 25 vjet. Muzeu i Skënderbeut brenda kalasë.',
+            imazh: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/MbO4XGmdADk',
+            lokacioni: 'Krujë, Shqipëri',
+            tipi: 'Video 360°'
+        }, {
+            id: 8,
+            titulli: '🚤 Liqeni i Komanit – Kanioni i Drinit',
+            pershkrimi: 'Një nga udhëtimet më spektakolare me varkë në Europë, mes malesh të larta dhe ujërash të gjelbër.',
+            imazh: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/ynMT_m3OV1I',
+            lokacioni: 'Koman, Shqipëri',
+            tipi: 'Video 360°'
+        }, {
+            id: 9,
+            titulli: '💎 Syri i Kaltër – Burimi Magjik',
+            pershkrimi: 'Një burim natyror me ngjyrë të thellë blu në mes të pyjeve. Një nga mrekullitë natyrore më të vizituara.',
+            imazh: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/MbO4XGmdADk',
+            lokacioni: 'Muzinë, Sarandë',
+            tipi: 'Video 360°'
+        }, {
+            id: 10,
+            titulli: '🏯 Kalaja e Rozafës – Shkodër',
+            pershkrimi: 'Kalaja legjendare mbi lumin Buna me pamje mbi liqenin e Shkodrës. Historia e Rozafës – legjendë shqiptare.',
+            imazh: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80',
+            iframe: 'https://www.youtube.com/embed/ynMT_m3OV1I',
+            lokacioni: 'Shkodër, Shqipëri',
+            tipi: 'Video 360°'
+        }];
+
+        // ─── STORAGE ──────────────────────────────────
+        const STORAGE_KEY = 'shqiperia360_vr_vendet';
+        let vendet = [];
+
+        function ngarkoNgaStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        vendet = parsed;
+                        return;
+                    }
+                }
+            } catch (e) { /* përdor default */ }
+            vendet = JSON.parse(JSON.stringify(defaultVendet));
+            ruajNeStorage();
+        }
+
+        function ruajNeStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(vendet));
+            } catch (e) {
+                showToast('⚠️ Nuk u ruajt në localStorage (memorja e plotë?).', 'error');
+            }
+        }
+
+        // ─── FILTRIMI ─────────────────────────────────
+        let vendetFiltruara = [];
+        let filterAktiv = 'all';
+        let searchTerm = '';
+
+        function aplikoFiltrat() {
+            vendetFiltruara = vendet.filter(v => {
+                const matchesSearch = !searchTerm ||
+                    v.titulli.toLowerCase().includes(searchTerm) ||
+                    v.pershkrimi.toLowerCase().includes(searchTerm) ||
+                    v.lokacioni.toLowerCase().includes(searchTerm);
+                const matchesFilter = filterAktiv === 'all' || v.tipi === filterAktiv;
+                return matchesSearch && matchesFilter;
+            });
+            ngarkoGalerine();
+        }
+
+        // ─── NGARKO GALERINË ──────────────────────────
+        function ngarkoGalerine() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            if (vendetFiltruara.length === 0) {
+                gallery.innerHTML = `
+                        <div class="empty-state">
+                            <span class="icon">😕</span>
+                            <h3>Nuk u gjet asnjë vend</h3>
+                            <p>Provoni të kërkoni me fjalë të tjera ose shtoni vende të reja.</p>
+                        </div>`;
+                return;
+            }
+
+            vendetFiltruara.forEach(vendi => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                        <div class="card-iframe-wrap" onclick="hapViewer(${vendi.id})" title="Kliko për të hapur në shikuesin 360°">
+                            <iframe src="${vendi.iframe}" allowfullscreen loading="lazy"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking; fullscreen">
+                            </iframe>
+                            <span class="card-badge">${escapeHTML(vendi.tipi)}</span>
+                            <div class="card-actions" onclick="event.stopPropagation()">
+                                <button class="action-btn expand-btn" onclick="hapViewer(${vendi.id})" title="Hap në shikues të plotë">⛶</button>
+                                <button class="action-btn" onclick="hapEditModal(${vendi.id})" title="Edito">✏️</button>
+                                <button class="action-btn delete" onclick="fshiVend(${vendi.id})" title="Fshi">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <h3>${escapeHTML(vendi.titulli)}</h3>
+                            <p>${escapeHTML(vendi.pershkrimi)}</p>
+                            <div class="card-meta">
+                                <span class="location-tag">📍 ${escapeHTML(vendi.lokacioni)}</span>
+                                <span class="type-badge">${escapeHTML(vendi.tipi)}</span>
+                            </div>
+                        </div>`;
+                gallery.appendChild(card);
+            });
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ─── HAP SHIKUESIN ────────────────────────────
+        window.hapViewer = function(id) {
+            const vendi = vendet.find(v => v.id === id);
+            if (!vendi) return;
+            document.getElementById('viewerTitle').textContent = vendi.titulli;
+            document.getElementById('viewerIframe').src = vendi.iframe;
+            hapModal('viewerModal');
+        };
+
+        window.toggleFullscreenIframe = function() {
+            const iframe = document.getElementById('viewerIframe');
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            } else {
+                showToast('ℹ️ Fullscreen nuk mbështetet në këtë shfletues.', 'info');
+            }
+        };
+
+        // ─── EDIT ──────────────────────────────────────
+        window.hapEditModal = function(id) {
+            const vendi = vendet.find(v => v.id === id);
+            if (!vendi) return;
+            document.getElementById('editId').value = vendi.id;
+            document.getElementById('editTitulli').value = vendi.titulli;
+            document.getElementById('editPershkrimi').value = vendi.pershkrimi;
+            document.getElementById('editImazh').value = vendi.imazh || '';
+            document.getElementById('editIframe').value = vendi.iframe;
+            document.getElementById('editLokacioni').value = vendi.lokacioni;
+            document.getElementById('editTipi').value = vendi.tipi;
+            updateEditPreview();
+            hapModal('editModal');
+        };
+
+        window.updateEditPreview = function() {
+            const url = document.getElementById('editImazh').value;
+            const preview = document.getElementById('editImagePreview');
+            if (url) {
+                preview.innerHTML =
+                    `<img src="${url}" onerror="this.parentElement.innerHTML='<div class=placeholder>❌ Imazhi nuk u ngarkua</div>'">`;
+            } else {
+                preview.innerHTML = '<div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>';
+            }
+        };
+
+        window.ruajEditimin = function() {
+            const id = parseInt(document.getElementById('editId').value);
+            const titulli = document.getElementById('editTitulli').value.trim();
+            const pershkrimi = document.getElementById('editPershkrimi').value.trim();
+            const imazh = document.getElementById('editImazh').value.trim();
+            const iframe = document.getElementById('editIframe').value.trim();
+            const lokacioni = document.getElementById('editLokacioni').value.trim();
+            const tipi = document.getElementById('editTipi').value;
+
+            if (!titulli || !iframe) {
+                showToast('⚠️ Titulli dhe Iframe URL janë të detyrueshme!', 'error');
+                return;
+            }
+
+            const index = vendet.findIndex(v => v.id === id);
+            if (index !== -1) {
+                vendet[index] = { ...vendet[index], titulli, pershkrimi, imazh, iframe, lokacioni, tipi };
+                ruajNeStorage();
+                aplikoFiltrat();
+                mbyllModal('editModal');
+                showToast('✅ Vendi u përditësua me sukses!', 'success');
+            }
+        };
+
+        // ─── FSHI ──────────────────────────────────────
+        window.fshiVend = function(id) {
+            if (!confirm('⚠️ A jeni të sigurt që doni të fshini këtë vend? Ky veprim nuk kthehet pas.')) return;
+            vendet = vendet.filter(v => v.id !== id);
+            ruajNeStorage();
+            aplikoFiltrat();
+            showToast('🗑️ Vendi u fshi me sukses!', 'success');
+        };
+
+        // ─── SHTO ──────────────────────────────────────
+        window.hapShtoModal = function() {
+            document.getElementById('addTitulli').value = '';
+            document.getElementById('addPershkrimi').value = '';
+            document.getElementById('addImazh').value = '';
+            document.getElementById('addIframe').value = '';
+            document.getElementById('addLokacioni').value = '';
+            document.getElementById('addTipi').value = 'Video 360°';
+            document.getElementById('addImagePreview').innerHTML =
+                '<div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>';
+            hapModal('addModal');
+        };
+
+        window.updateAddPreview = function() {
+            const url = document.getElementById('addImazh').value;
+            const preview = document.getElementById('addImagePreview');
+            if (url) {
+                preview.innerHTML =
+                    `<img src="${url}" onerror="this.parentElement.innerHTML='<div class=placeholder>❌ Imazhi nuk u ngarkua</div>'">`;
+            } else {
+                preview.innerHTML = '<div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>';
+            }
+        };
+
+        window.shtoVend = function() {
+            const titulli = document.getElementById('addTitulli').value.trim();
+            const pershkrimi = document.getElementById('addPershkrimi').value.trim();
+            const imazh = document.getElementById('addImazh').value.trim();
+            const iframe = document.getElementById('addIframe').value.trim();
+            const lokacioni = document.getElementById('addLokacioni').value.trim();
+            const tipi = document.getElementById('addTipi').value;
+
+            if (!titulli || !iframe) {
+                showToast('⚠️ Titulli dhe Iframe URL janë të detyrueshme!', 'error');
+                return;
+            }
+
+            const newId = Math.max(...vendet.map(v => v.id), 0) + 1;
+            vendet.unshift({
+                id: newId,
+                titulli,
+                pershkrimi,
+                imazh: imazh ||
+                    'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22500%22%3E%3Crect fill=%22%231e293b%22 width=%22800%22 height=%22500%22/%3E%3Ctext fill=%22%2364748b%22 x=%22400%22 y=%22260%22 text-anchor=%22middle%22 font-size=%2228%22%3E360%C2%B0%3C/text%3E%3C/svg%3E',
+                iframe,
+                lokacioni: lokacioni || 'Shqipëri',
+                tipi
+            });
+
+            ruajNeStorage();
+            aplikoFiltrat();
+            mbyllModal('addModal');
+            showToast('✅ Vendi u shtua me sukses!', 'success');
+        };
+
+        // ─── KËRKO ─────────────────────────────────────
+        window.kerko = function() {
+            searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            aplikoFiltrat();
+        };
+
+        // ─── EKSPORTO / IMPORTO ────────────────────────
+        window.eksportoJSON = function() {
+            const dataStr = JSON.stringify(vendet, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shqiperia360_vendet.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('📥 Të dhënat u eksportuan!', 'success');
+        };
+
+        window.importoJSON = function() {
+            document.getElementById('importFileInput').click();
+        };
+
+        window.handleImportFile = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported) || imported.length === 0) {
+                        throw new Error('JSON nuk është array i vlefshëm.');
+                    }
+                    if (!confirm(
+                            `📤 Jeni duke importuar ${imported.length} vende. Të dhënat ekzistuese do të mbishkruhen. Vazhdoni?`
+                            )) return;
+                    vendet = imported;
+                    ruajNeStorage();
+                    aplikoFiltrat();
+                    showToast(`✅ ${imported.length} vende u importuan me sukses!`, 'success');
+                } catch (err) {
+                    showToast('❌ Skedar i pavlefshëm. Sigurohuni që është JSON i saktë.', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+
+        // ─── MODAL HELPERS ─────────────────────────────
+        window.hapModal = function(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.mbyllModal = function(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+            if (modalId === 'viewerModal') {
+                document.getElementById('viewerIframe').src = '';
+            }
+        };
+
+        // ─── TOAST ─────────────────────────────────────
+        window.showToast = function(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => { toast.classList.remove('show'); }, 3200);
+        };
+
+        // ─── FILTER CHIPS ──────────────────────────────
+        function setupFilterChips() {
+            const chips = document.querySelectorAll('#filterChips .filter-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    chips.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    filterAktiv = this.dataset.filter;
+                    aplikoFiltrat();
+                });
+            });
+        }
+
+        // ─── EVENT LISTENERS ───────────────────────────
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ['viewerModal', 'editModal', 'addModal'].forEach(id => mbyllModal(id));
+            }
+        });
+
+        ['viewerModal', 'editModal', 'addModal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('click', (e) => {
+                    if (e.target === el) mbyllModal(id);
+                });
+            }
+        });
+
+        // ─── INICIALIZIMI ──────────────────────────────
+        ngarkoNgaStorage();
+        vendetFiltruara = [...vendet];
+        setupFilterChips();
+        ngarkoGalerine();
+
+        console.log('🇦🇱 Shqipëria 360° VR – Web App u ngarkua me sukses!');
+        console.log(`   📍 ${vendet.length} vende turistike të disponueshme.`);
+        console.log('   🥽 Kliko kartat për shikuesin 360° | ✏️ Butonat për edito/fshi | ➕ Shto vende të reja.');
+        console.log('   💾 Të dhënat ruhen automatikisht në localStorage.');
+    })();
+</script>
+</body>
+</html>
