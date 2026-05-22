@@ -1,0 +1,14 @@
+# VR Explorer
+
+> Aplikacion immersive për të eksploruar botën në Google Street View 360°, me mbështetje për pamje VR me dy sy dhe një bibliotekë vendesh të shenjta islame dhe monumentesh botërore.
+
+VR Explorer ngarkon panorama reale të Google Street View, ofron një hartë mini interaktive, ruan favorites/historik për përdoruesit e kyçur dhe lejon eksplorimin e mbi 200 vendeve të famshme — duke përfshirë Mekën, Medinën, Al-Aksanë dhe shumë xhami e monumente historike.
+
+## Pages
+
+- [Eksploruesi kryesor](/): Hartë + Street View 360°, modaliteti VR Headset, lista e vendeve të famshme.
+- [Kyçu / Regjistrohu](/auth): Krijo llogari ose kyçu për të ruajtur favorites dhe historikun.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Lista e plotë e URL-ve të indeksueshme.
