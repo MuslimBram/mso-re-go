@@ -521,9 +521,9 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">Vende të famshme</h3>
+          <h2 className="font-semibold text-sm">Vende të famshme</h2>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose} aria-label="Mbyll listën e vendeve">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -535,6 +535,7 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Kërko vend..."
             className="pl-9 h-9 bg-card/40 border-border/40"
+            aria-label="Kërko vend"
           />
         </div>
       </div>
@@ -545,9 +546,9 @@ export function FamousPlaces({ apiKey, onTeleport, onClose }: Props) {
             if (items.length === 0) return null;
             return (
               <section key={cat}>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
                   {CATEGORY_LABELS[cat]}
-                </h4>
+                </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {items.map((p) => (
                     <button
