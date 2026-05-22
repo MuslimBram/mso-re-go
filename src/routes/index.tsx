@@ -9,7 +9,7 @@ import { VRStereoView } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { QuranPlayer } from "@/components/vr/QuranPlayer";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2 } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,7 @@ function Index() {
   const [vrOpen, setVrOpen] = useState(false);
   const [showFamous, setShowFamous] = useState(false);
   const [showQuran, setShowQuran] = useState(false);
+  const [quranVolume, setQuranVolume] = useState(0.8);
   const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
@@ -172,22 +173,37 @@ function Index() {
       <h1 className="sr-only">VR Explorer — Eksploro botën në Street View 360°</h1>
 
       {/* Top-center: Explorer New + Kuran */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 pointer-events-auto">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 pointer-events-auto">
         <a href="/explorer-new.html" target="_blank" rel="noopener noreferrer">
-          <Button size="sm" className="hud-glow gap-2">
-            <Compass className="h-4 w-4" />
+          <Button size="lg" className="hud-glow gap-3 h-16 px-8 text-lg font-semibold rounded-2xl">
+            <Compass className="h-7 w-7" />
             Explorer <span className="font-bold">New</span>
           </Button>
         </a>
         <Button
-          size="sm"
+          size="lg"
           variant="secondary"
-          className="glass-panel gap-2"
+          className="glass-panel gap-2 h-12 px-5 text-base font-semibold rounded-xl"
           onClick={() => setShowQuran((s) => !s)}
         >
-          <BookOpen className="h-4 w-4" />
-          Kuran
+          <BookOpen className="h-5 w-5" />
+          <Headphones className="h-5 w-5" />
+          Kur'ani
         </Button>
+        <div className="glass-panel h-12 px-3 rounded-xl flex items-center gap-2">
+          <Volume2 className="h-4 w-4 text-muted-foreground" />
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={quranVolume}
+            onChange={(e) => setQuranVolume(Number(e.target.value))}
+            className="w-24 accent-primary"
+            aria-label="Volumi i Kur'anit"
+            title="Volumi i Kur'anit"
+          />
+        </div>
       </div>
 
       {mapsReady && (
@@ -287,7 +303,7 @@ function Index() {
             size="lg"
             className="hud-glow pulse-ring"
           >
-            <Headphones className="h-5 w-5 mr-2" /> VR Headset
+            <Glasses className="h-5 w-5 mr-2" /> VR Headset
           </Button>
         </div>
         {mapsReady && (
@@ -329,7 +345,7 @@ function Index() {
         />
       )}
 
-      <QuranPlayer open={showQuran} onClose={() => setShowQuran(false)} />
+      <QuranPlayer open={showQuran} onClose={() => setShowQuran(false)} externalVolume={quranVolume} onVolumeChange={setQuranVolume} />
 
       {/* Sphere / VR overlay */}
       {vrOpen && panoramaInstanceRef.current && apiKey && (
