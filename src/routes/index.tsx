@@ -26,7 +26,15 @@ export const Route = createFileRoute("/")({
         content:
           "Aplikacion immersive që përdor Google Street View real për të 'ecur' nëpër botë me kontroll si në lojë, mbështetje për WebXR dhe headsets VR.",
       },
+      { property: "og:title", content: "VR Explorer — Eksploro botën në Street View 360°" },
+      {
+        property: "og:description",
+        content:
+          "Udhëto në Mekë, Medinë, Al-Aksa e qindra vende të tjera me Google Street View 360° dhe modalitet VR Headset.",
+      },
+      { property: "og:url", content: "https://rrogozhina-guide.com/" },
     ],
+    links: [{ rel: "canonical", href: "https://rrogozhina-guide.com/" }],
   }),
 });
 
