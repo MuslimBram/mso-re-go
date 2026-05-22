@@ -243,17 +243,17 @@ export function VRStereoView({ panorama, onExit }: Props) {
             {/* Movement pad */}
             <div className="pointer-events-auto grid grid-cols-3 gap-1.5">
               <div />
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(0)} title="Para">
+              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(0)} title="Para" aria-label="Ec para">
                 <ArrowUp className="h-4 w-4" />
               </Button>
               <div />
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(-90)} title="Majtas">
+              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(-90)} title="Majtas" aria-label="Ec majtas">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(180)} title="Mbrapa">
+              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(180)} title="Mbrapa" aria-label="Ec mbrapa">
                 <ArrowDown className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(90)} title="Djathtas">
+              <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => moveByHeadingOffset(90)} title="Djathtas" aria-label="Ec djathtas">
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -261,26 +261,26 @@ export function VRStereoView({ panorama, onExit }: Props) {
             {/* Look + zoom */}
             <div className="pointer-events-auto flex flex-col gap-1.5 items-center">
               <div className="flex gap-1.5">
-                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(0.5)} title="Zmadho">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(0.5)} title="Zmadho" aria-label="Zmadho">
                   <Plus className="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(-0.5)} title="Zvogëlo">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => zoomBy(-0.5)} title="Zvogëlo" aria-label="Zvogëlo">
                   <Minus className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-1.5">
-                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(15)} title="Shiko lart">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(15)} title="Shiko lart" aria-label="Shiko lart">
                   <MoveUp className="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(-15)} title="Shiko poshtë">
+                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => tiltPitch(-15)} title="Shiko poshtë" aria-label="Shiko poshtë">
                   <MoveDown className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-1.5">
-                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => rotateYaw(-15)} title="Rrotullo majtas">
+                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => rotateYaw(-15)} title="Rrotullo majtas" aria-label="Rrotullo majtas">
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </Button>
-                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => rotateYaw(15)} title="Rrotullo djathtas">
+                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => rotateYaw(15)} title="Rrotullo djathtas" aria-label="Rrotullo djathtas">
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
