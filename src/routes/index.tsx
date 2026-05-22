@@ -7,8 +7,9 @@ import { ControlsHelp } from "@/components/vr/ControlsHelp";
 import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
 import { VRStereoView } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
+import { QuranPlayer } from "@/components/vr/QuranPlayer";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +51,7 @@ function Index() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [vrOpen, setVrOpen] = useState(false);
   const [showFamous, setShowFamous] = useState(false);
+  const [showQuran, setShowQuran] = useState(false);
   const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
@@ -168,6 +170,26 @@ function Index() {
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       <h1 className="sr-only">VR Explorer — Eksploro botën në Street View 360°</h1>
+
+      {/* Top-center: Explorer New + Kuran */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 pointer-events-auto">
+        <a href="/explorer-new.html" target="_blank" rel="noopener noreferrer">
+          <Button size="sm" className="hud-glow gap-2">
+            <Compass className="h-4 w-4" />
+            Explorer <span className="font-bold">New</span>
+          </Button>
+        </a>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="glass-panel gap-2"
+          onClick={() => setShowQuran((s) => !s)}
+        >
+          <BookOpen className="h-4 w-4" />
+          Kuran
+        </Button>
+      </div>
+
       {mapsReady && (
         <StreetViewExplorer
           initial={DEFAULT_LOCATION}
@@ -306,6 +328,8 @@ function Index() {
           onClose={() => setShowFamous(false)}
         />
       )}
+
+      {showQuran && <QuranPlayer onClose={() => setShowQuran(false)} />}
 
       {/* Sphere / VR overlay */}
       {vrOpen && panoramaInstanceRef.current && apiKey && (
