@@ -39,11 +39,13 @@ const trackUrl = (reciter: typeof RECITERS[number], surahNo: number) =>
 interface Props {
   open: boolean;
   onClose: () => void;
+  externalVolume?: number;
+  onVolumeChange?: (v: number) => void;
 }
 
 type UserTrack = { name: string; url: string };
 
-export function QuranPlayer({ open, onClose }: Props) {
+export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [reciterIdx, setReciterIdx] = useState(0);
   const [surahIdx, setSurahIdx] = useState(54); // Ar-Rahman by default
@@ -52,7 +54,12 @@ export function QuranPlayer({ open, onClose }: Props) {
   const [usingUser, setUsingUser] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
-  const [volume, setVolume] = useState(0.8);
+  const [internalVolume, setInternalVolume] = useState(0.8);
+  const volume = externalVolume ?? internalVolume;
+  const setVolume = (v: number) => {
+    setInternalVolume(v);
+    onVolumeChange?.(v);
+  };
 
   const reciter = RECITERS[reciterIdx];
   const currentLabel = usingUser !== null
