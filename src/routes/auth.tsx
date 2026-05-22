@@ -13,7 +13,11 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Kyçu — VR Explorer" },
       { name: "description", content: "Kyçu për të ruajtur favorites dhe historikun e eksplorimit." },
+      { property: "og:title", content: "Kyçu — VR Explorer" },
+      { property: "og:description", content: "Krijo llogari ose kyçu për të ruajtur favorites dhe historik." },
+      { property: "og:url", content: "https://rrogozhina-guide.com/auth" },
     ],
+    links: [{ rel: "canonical", href: "https://rrogozhina-guide.com/auth" }],
   }),
 });
 
