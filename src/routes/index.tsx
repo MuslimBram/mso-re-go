@@ -329,7 +329,7 @@ function Index() {
         />
       )}
 
-      {showQuran && <QuranPlayer onClose={() => setShowQuran(false)} />}
+      <QuranPlayer open={showQuran} onClose={() => setShowQuran(false)} />
 
       {/* Sphere / VR overlay */}
       {vrOpen && panoramaInstanceRef.current && apiKey && (
