@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Upload, Play, Pause, SkipBack, SkipForward, Shuffle } from "lucide-react";
+import { X, Upload, Play, Pause, SkipBack, SkipForward, Shuffle, Rewind } from "lucide-react";
 
 // All 114 surahs (transliteration)
 const SURAHS = [
@@ -41,11 +41,12 @@ interface Props {
   onClose: () => void;
   externalVolume?: number;
   onVolumeChange?: (v: number) => void;
+  isOwner?: boolean;
 }
 
 type UserTrack = { name: string; url: string };
 
-export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: Props) {
+export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange, isOwner }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [reciterIdx, setReciterIdx] = useState(0);
   const [surahIdx, setSurahIdx] = useState(54); // Ar-Rahman by default
@@ -55,6 +56,8 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
   const [playing, setPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [internalVolume, setInternalVolume] = useState(0.8);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const volume = externalVolume ?? internalVolume;
   const setVolume = (v: number) => {
     setInternalVolume(v);
@@ -82,6 +85,49 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
+
+  // If browser blocked autoplay, start on first user interaction anywhere
+  useEffect(() => {
+    const tryStart = () => {
+      const a = audioRef.current;
+      if (a && a.paused) {
+        a.play().then(() => setPlaying(true)).catch(() => {});
+      }
+      window.removeEventListener("pointerdown", tryStart);
+      window.removeEventListener("keydown", tryStart);
+    };
+    window.addEventListener("pointerdown", tryStart, { once: true });
+    window.addEventListener("keydown", tryStart, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", tryStart);
+      window.removeEventListener("keydown", tryStart);
+    };
+  }, []);
+
+  const rewind10 = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.currentTime <= 3) {
+      prev();
+    } else {
+      a.currentTime = Math.max(0, a.currentTime - 10);
+    }
+  };
+
+  const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const a = audioRef.current;
+    if (!a || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    a.currentTime = pct * duration;
+  };
+
+  const fmt = (s: number) => {
+    if (!isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60).toString().padStart(2, "0");
+    return `${m}:${ss}`;
+  };
 
   const next = () => {
     if (usingUser !== null) {
@@ -130,6 +176,9 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
         onPause={() => setPlaying(false)}
         onEnded={next}
         onError={() => next()}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+        onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
         preload="auto"
       />
 
@@ -156,6 +205,9 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
 
           {/* Transport */}
           <div className="flex items-center gap-2 mb-3">
+            <Button onClick={rewind10} size="icon" variant="ghost" className="h-9 w-9" aria-label="Mbrapa 10 sek" title="Mbrapa 10 sek">
+              <Rewind className="h-4 w-4" />
+            </Button>
             <Button onClick={prev} size="icon" variant="ghost" className="h-9 w-9" aria-label="E mëparshmja">
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -183,6 +235,28 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
                 className="w-full mt-1 accent-primary"
                 aria-label="Volumi"
               />
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-3">
+            <div
+              onClick={onSeek}
+              className="relative h-2 w-full rounded-full bg-muted cursor-pointer overflow-hidden"
+              role="slider"
+              aria-label="Pozicioni i recitimit"
+              aria-valuemin={0}
+              aria-valuemax={Math.floor(duration)}
+              aria-valuenow={Math.floor(currentTime)}
+            >
+              <div
+                className="absolute inset-y-0 left-0 bg-primary transition-[width] duration-150"
+                style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%" }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground mt-1 tabular-nums">
+              <span>{fmt(currentTime)}</span>
+              <span>{fmt(duration)}</span>
             </div>
           </div>
 
@@ -223,11 +297,13 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange }: P
             ))}
           </div>
 
-          <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border cursor-pointer hover:bg-muted/50 text-xs">
-            <Upload className="h-3.5 w-3.5" />
-            Ngarko audion tënde (MP3/M4A)
-            <input type="file" accept="audio/*" multiple className="hidden" onChange={onUpload} />
-          </label>
+          {isOwner && (
+            <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border cursor-pointer hover:bg-muted/50 text-xs">
+              <Upload className="h-3.5 w-3.5" />
+              Ngarko audion tënde (MP3/M4A)
+              <input type="file" accept="audio/*" multiple className="hidden" onChange={onUpload} />
+            </label>
+          )}
 
           <p className="mt-3 text-[10px] text-muted-foreground text-center">
             Audio vazhdon edhe pasi e mbyll panelin. Suret avancojnë automatikisht.
