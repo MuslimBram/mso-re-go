@@ -8,8 +8,9 @@ import { FavoritesPanel } from "@/components/vr/FavoritesPanel";
 import { VRStereoView } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { QuranPlayer } from "@/components/vr/QuranPlayer";
+import { SuggestPlaceDialog } from "@/components/vr/SuggestPlaceDialog";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2 } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2, MessageSquarePlus, X } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +54,9 @@ function Index() {
   const [showFamous, setShowFamous] = useState(false);
   const [showQuran, setShowQuran] = useState(false);
   const [quranVolume, setQuranVolume] = useState(0.8);
+  const [showExplorerNew, setShowExplorerNew] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
@@ -83,6 +87,18 @@ function Index() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Check admin role
+  useEffect(() => {
+    if (!user) { setIsOwner(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsOwner(!!data));
+  }, [user]);
 
   // Save history when pano changes (debounced via panoId)
   useEffect(() => {
@@ -174,12 +190,14 @@ function Index() {
 
       {/* Top-center: Explorer New + Kuran */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 pointer-events-auto">
-        <a href="/explorer-new.html" target="_blank" rel="noopener noreferrer">
-          <Button size="lg" className="hud-glow gap-3 h-16 px-8 text-lg font-semibold rounded-2xl">
-            <Compass className="h-7 w-7" />
-            Explorer <span className="font-bold">New</span>
-          </Button>
-        </a>
+        <Button
+          size="lg"
+          className="hud-glow gap-3 h-16 px-8 text-lg font-semibold rounded-2xl"
+          onClick={() => setShowExplorerNew(true)}
+        >
+          <Compass className="h-7 w-7" />
+          Explorer <span className="font-bold">New</span>
+        </Button>
         <Button
           size="lg"
           variant="secondary"
@@ -204,6 +222,16 @@ function Index() {
             title="Volumi i Kur'anit"
           />
         </div>
+        <Button
+          size="lg"
+          variant="secondary"
+          className="glass-panel gap-2 h-12 px-4 text-sm font-semibold rounded-xl"
+          onClick={() => setShowSuggest(true)}
+          title="Sugjero një vend"
+        >
+          <MessageSquarePlus className="h-5 w-5" />
+          Sugjero vend
+        </Button>
       </div>
 
       {mapsReady && (
@@ -247,26 +275,30 @@ function Index() {
           >
             <Sparkles className="h-5 w-5" />
           </Button>
-          <Button
-            onClick={saveCurrentAsFavorite}
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 glass-panel"
-            title="Ruaj si favorite"
-            aria-label="Ruaj si favorite"
-          >
-            <Star className="h-5 w-5" />
-          </Button>
-          <Button
-            onClick={() => setShowFavorites((s) => !s)}
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 glass-panel"
-            title="Bibliotekë"
-            aria-label="Hap bibliotekën"
-          >
-            <Library className="h-5 w-5" />
-          </Button>
+          {isOwner && (
+            <>
+              <Button
+                onClick={saveCurrentAsFavorite}
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 glass-panel"
+                title="Ruaj si favorite"
+                aria-label="Ruaj si favorite"
+              >
+                <Star className="h-5 w-5" />
+              </Button>
+              <Button
+                onClick={() => setShowFavorites((s) => !s)}
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 glass-panel"
+                title="Bibliotekë"
+                aria-label="Hap bibliotekën"
+              >
+                <Library className="h-5 w-5" />
+              </Button>
+            </>
+          )}
           {user ? (
             <Button onClick={handleSignOut} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Çkyçu" aria-label="Çkyçu">
               <LogOut className="h-5 w-5" />
@@ -278,9 +310,11 @@ function Index() {
               </Button>
             </Link>
           )}
-          <Button onClick={handleClearKey} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Cilësimet" aria-label="Cilësimet">
-            <Settings className="h-5 w-5" />
-          </Button>
+          {isOwner && (
+            <Button onClick={handleClearKey} variant="ghost" size="icon" className="h-11 w-11 glass-panel" title="Cilësimet" aria-label="Cilësimet">
+              <Settings className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -345,7 +379,40 @@ function Index() {
         />
       )}
 
-      <QuranPlayer open={showQuran} onClose={() => setShowQuran(false)} externalVolume={quranVolume} onVolumeChange={setQuranVolume} />
+      <QuranPlayer
+        open={showQuran}
+        onClose={() => setShowQuran(false)}
+        externalVolume={quranVolume}
+        onVolumeChange={setQuranVolume}
+        isOwner={isOwner}
+      />
+
+      <SuggestPlaceDialog
+        open={showSuggest}
+        onClose={() => setShowSuggest(false)}
+        currentLat={pano.lat}
+        currentLng={pano.lng}
+      />
+
+      {/* Explorer New modal */}
+      {showExplorerNew && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
+          <Button
+            onClick={() => setShowExplorerNew(false)}
+            size="icon"
+            variant="secondary"
+            className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full shadow-lg"
+            aria-label="Mbyll"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+          <iframe
+            src="/explorer-new.html"
+            title="Explorer New"
+            className="w-full h-full border-0"
+          />
+        </div>
+      )}
 
       {/* Sphere / VR overlay */}
       {vrOpen && panoramaInstanceRef.current && apiKey && (
