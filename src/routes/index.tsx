@@ -11,6 +11,7 @@ import { QuranPlayer } from "@/components/vr/QuranPlayer";
 import { SuggestPlaceDialog } from "@/components/vr/SuggestPlaceDialog";
 import { SearchBar } from "@/components/vr/SearchBar";
 import { DirectionsPanel } from "@/components/vr/DirectionsPanel";
+import { AccessibilityPanel } from "@/components/vr/AccessibilityPanel";
 import { Button } from "@/components/ui/button";
 import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2, MessageSquarePlus, X, Route as RouteIcon } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
@@ -60,6 +61,38 @@ function Index() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [showDirections, setShowDirections] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+
+  const handleVoiceCommand = useCallback((cmd: string) => {
+    const c = cmd.toLowerCase();
+    if (c.includes("ndalo") || c.includes("stop")) {
+      window.speechSynthesis?.cancel();
+      return;
+    }
+    if (c.includes("kuran")) {
+      setShowQuran((s) => (c.includes("mbyll") ? false : c.includes("hap") ? true : !s));
+      return;
+    }
+    if (c.includes("drejtim")) {
+      setShowDirections((s) => (c.includes("mbyll") ? false : c.includes("hap") ? true : !s));
+      return;
+    }
+    if (c.includes("sugjero") || c.includes("vend i ri")) {
+      setShowSuggest(true);
+      return;
+    }
+    if (c.includes("vr") || c.includes("syze")) {
+      if (panoramaInstanceRef.current) setVrOpen(true);
+      return;
+    }
+    if (c.includes("famsh") || c.includes("famous")) {
+      setShowFamous(true);
+      return;
+    }
+    if (c.includes("explorer")) {
+      setShowExplorerNew(true);
+    }
+  }, []);
+
   const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
   const lastHistoryPanoRef = useRef<string | null>(null);
@@ -341,6 +374,7 @@ function Index() {
               <Settings className="h-5 w-5" />
             </Button>
           )}
+          <AccessibilityPanel onCommand={handleVoiceCommand} />
         </div>
       </div>
 
