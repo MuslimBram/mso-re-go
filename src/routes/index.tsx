@@ -225,26 +225,26 @@ function Index() {
       <h1 className="sr-only">VR Explorer — Eksploro botën në Street View 360°</h1>
 
       {/* Top-center: Explorer New + Kuran */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 pointer-events-auto">
+      <div className="absolute top-20 sm:top-4 left-1/2 -translate-x-1/2 z-10 flex flex-wrap justify-center items-center gap-2 sm:gap-3 pointer-events-auto max-w-[95vw]">
         <Button
           size="lg"
-          className="hud-glow gap-3 h-16 px-8 text-lg font-semibold rounded-2xl"
+          className="hud-glow gap-2 sm:gap-3 h-12 sm:h-16 px-4 sm:px-8 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl"
           onClick={() => setShowExplorerNew(true)}
         >
-          <Compass className="h-7 w-7" />
+          <Compass className="h-5 w-5 sm:h-7 sm:w-7" />
           Explorer <span className="font-bold">New</span>
         </Button>
         <Button
           size="lg"
           variant="secondary"
-          className="glass-panel gap-2 h-12 px-5 text-base font-semibold rounded-xl"
+          className="glass-panel gap-2 h-10 sm:h-12 px-3 sm:px-5 text-sm sm:text-base font-semibold rounded-xl"
           onClick={() => setShowQuran((s) => !s)}
         >
-          <BookOpen className="h-5 w-5" />
-          <Headphones className="h-5 w-5" />
+          <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Headphones className="h-4 w-4 sm:h-5 sm:w-5" />
           Kur'ani
         </Button>
-        <div className="glass-panel h-12 px-3 rounded-xl flex items-center gap-2">
+        <div className="glass-panel h-10 sm:h-12 px-2 sm:px-3 rounded-xl hidden sm:flex items-center gap-2">
           <Volume2 className="h-4 w-4 text-muted-foreground" />
           <input
             type="range"
@@ -261,28 +261,28 @@ function Index() {
         <Button
           size="lg"
           variant="secondary"
-          className="glass-panel gap-2 h-12 px-4 text-sm font-semibold rounded-xl"
+          className="glass-panel gap-2 h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm font-semibold rounded-xl"
           onClick={() => setShowSuggest(true)}
           title="Sugjero një vend"
         >
-          <MessageSquarePlus className="h-5 w-5" />
-          Sugjero vend
+          <MessageSquarePlus className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden xs:inline">Sugjero</span> vend
         </Button>
         <Button
           size="lg"
           variant="secondary"
-          className="glass-panel gap-2 h-12 px-4 text-sm font-semibold rounded-xl"
+          className="glass-panel gap-2 h-10 sm:h-12 px-3 sm:px-4 text-xs sm:text-sm font-semibold rounded-xl"
           onClick={() => setShowDirections((s) => !s)}
           title="Drejtime & pika qendrimi"
         >
-          <RouteIcon className="h-5 w-5" />
+          <RouteIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           Drejtime
         </Button>
       </div>
 
       {/* Search bar */}
       {mapsReady && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 w-[min(520px,92vw)] pointer-events-auto">
+        <div className="absolute top-[148px] sm:top-24 left-1/2 -translate-x-1/2 z-10 w-[min(520px,92vw)] pointer-events-auto">
           <SearchBar
             ready={mapsReady}
             onSelect={({ lat, lng, name }) => {
