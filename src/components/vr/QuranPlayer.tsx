@@ -58,6 +58,7 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange, isO
   const [internalVolume, setInternalVolume] = useState(0.8);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(false);
   const volume = externalVolume ?? internalVolume;
   const setVolume = (v: number) => {
     setInternalVolume(v);
@@ -73,36 +74,37 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange, isO
     return trackUrl(reciter, surahIdx + 1);
   }, [usingUser, userTracks, reciter, surahIdx]);
 
-  // Load + autoplay when src changes
+  // Load when src changes; play only when user has enabled autoplay
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !currentUrl) return;
     a.src = currentUrl;
     a.volume = volume;
-    a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    if (autoPlay) {
+      a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      setPlaying(false);
+    }
   }, [currentUrl]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
-  // If browser blocked autoplay, start on first user interaction anywhere
+  // If user enables autoplay, try to start (first time may need a click)
   useEffect(() => {
-    const tryStart = () => {
-      const a = audioRef.current;
-      if (a && a.paused) {
-        a.play().then(() => setPlaying(true)).catch(() => {});
-      }
-      window.removeEventListener("pointerdown", tryStart);
-      window.removeEventListener("keydown", tryStart);
-    };
-    window.addEventListener("pointerdown", tryStart, { once: true });
-    window.addEventListener("keydown", tryStart, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", tryStart);
-      window.removeEventListener("keydown", tryStart);
-    };
-  }, []);
+    if (!autoPlay) return;
+    const a = audioRef.current;
+    if (!a) return;
+    a.play().then(() => setPlaying(true)).catch(() => {
+      const tryStart = () => {
+        const aa = audioRef.current;
+        if (aa && aa.paused) aa.play().then(() => setPlaying(true)).catch(() => {});
+        window.removeEventListener("pointerdown", tryStart);
+      };
+      window.addEventListener("pointerdown", tryStart, { once: true });
+    });
+  }, [autoPlay]);
 
   const rewind10 = () => {
     const a = audioRef.current;
@@ -228,37 +230,38 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange, isO
               <Shuffle className="h-4 w-4" />
             </Button>
             <div className="flex-1 min-w-0 ml-1">
-              <p className="text-xs font-medium truncate">{currentLabel}</p>
-              <input
-                type="range" min={0} max={1} step={0.01} value={volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                className="w-full mt-1 accent-primary"
-                aria-label="Volumi"
-              />
+              <p className="text-xs font-medium truncate mb-1">{currentLabel}</p>
+              <div
+                onClick={onSeek}
+                className="relative h-2 w-full rounded-full bg-muted cursor-pointer overflow-hidden"
+                role="slider"
+                aria-label="Pozicioni i recitimit"
+                aria-valuemin={0}
+                aria-valuemax={Math.floor(duration)}
+                aria-valuenow={Math.floor(currentTime)}
+              >
+                <div
+                  className="absolute inset-y-0 left-0 bg-primary transition-[width] duration-150"
+                  style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%" }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                <span>{fmt(currentTime)}</span>
+                <span>{fmt(duration)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="mb-3">
-            <div
-              onClick={onSeek}
-              className="relative h-2 w-full rounded-full bg-muted cursor-pointer overflow-hidden"
-              role="slider"
-              aria-label="Pozicioni i recitimit"
-              aria-valuemin={0}
-              aria-valuemax={Math.floor(duration)}
-              aria-valuenow={Math.floor(currentTime)}
-            >
-              <div
-                className="absolute inset-y-0 left-0 bg-primary transition-[width] duration-150"
-                style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%" }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground mt-1 tabular-nums">
-              <span>{fmt(currentTime)}</span>
-              <span>{fmt(duration)}</span>
-            </div>
-          </div>
+          {/* Autoplay toggle */}
+          <label className="flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg bg-muted/40 cursor-pointer text-[11px]">
+            <input
+              type="checkbox"
+              checked={autoPlay}
+              onChange={(e) => setAutoPlay(e.target.checked)}
+              className="accent-primary"
+            />
+            <span>Auto Play ▶ — fillo automatikisht & vazhdo te sura tjetër</span>
+          </label>
 
           {/* User uploads */}
           {userTracks.length > 0 && (
@@ -306,7 +309,7 @@ export function QuranPlayer({ open, onClose, externalVolume, onVolumeChange, isO
           )}
 
           <p className="mt-3 text-[10px] text-muted-foreground text-center">
-            Audio vazhdon edhe pasi e mbyll panelin. Suret avancojnë automatikisht.
+            Audio vazhdon edhe pasi e mbyll panelin.
           </p>
         </div>
       )}

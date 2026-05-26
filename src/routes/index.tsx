@@ -9,8 +9,10 @@ import { VRStereoView } from "@/components/vr/VRStereoView";
 import { FamousPlaces } from "@/components/vr/FamousPlaces";
 import { QuranPlayer } from "@/components/vr/QuranPlayer";
 import { SuggestPlaceDialog } from "@/components/vr/SuggestPlaceDialog";
+import { SearchBar } from "@/components/vr/SearchBar";
+import { DirectionsPanel } from "@/components/vr/DirectionsPanel";
 import { Button } from "@/components/ui/button";
-import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2, MessageSquarePlus, X } from "lucide-react";
+import { Headphones, Star, Library, LogIn, LogOut, Globe2, Settings, Sparkles, Compass, BookOpen, Glasses, Volume2, MessageSquarePlus, X, Route as RouteIcon } from "lucide-react";
 import { getGoogleMapsKey, clearGoogleMapsKey } from "@/lib/google-maps-key";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +58,7 @@ function Index() {
   const [quranVolume, setQuranVolume] = useState(0.8);
   const [showExplorerNew, setShowExplorerNew] = useState(false);
   const [showSuggest, setShowSuggest] = useState(false);
+  const [showDirections, setShowDirections] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const pendingPlaceNameRef = useRef<string | null>(null);
   const panoramaInstanceRef = useRef<google.maps.StreetViewPanorama | null>(null);
@@ -232,7 +235,30 @@ function Index() {
           <MessageSquarePlus className="h-5 w-5" />
           Sugjero vend
         </Button>
+        <Button
+          size="lg"
+          variant="secondary"
+          className="glass-panel gap-2 h-12 px-4 text-sm font-semibold rounded-xl"
+          onClick={() => setShowDirections((s) => !s)}
+          title="Drejtime & pika qendrimi"
+        >
+          <RouteIcon className="h-5 w-5" />
+          Drejtime
+        </Button>
       </div>
+
+      {/* Search bar */}
+      {mapsReady && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 w-[min(520px,92vw)] pointer-events-auto">
+          <SearchBar
+            ready={mapsReady}
+            onSelect={({ lat, lng, name }) => {
+              pendingPlaceNameRef.current = name;
+              setTarget({ lat, lng, ts: Date.now() });
+            }}
+          />
+        </div>
+      )}
 
       {mapsReady && (
         <StreetViewExplorer
@@ -393,6 +419,19 @@ function Index() {
         currentLat={pano.lat}
         currentLng={pano.lng}
       />
+
+      {mapsReady && (
+        <DirectionsPanel
+          open={showDirections}
+          onClose={() => setShowDirections(false)}
+          currentLat={pano.lat}
+          currentLng={pano.lng}
+          onTeleport={(lat, lng, name) => {
+            if (name) pendingPlaceNameRef.current = name;
+            setTarget({ lat, lng, ts: Date.now() });
+          }}
+        />
+      )}
 
       {/* Explorer New modal */}
       {showExplorerNew && (
