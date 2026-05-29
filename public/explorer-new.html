@@ -876,6 +876,7 @@
             <div class="form-group">
                 <label>URL e Imazhit (foto paraprake – për referencë)</label>
                 <input type="text" id="editImazh" placeholder="https://..." oninput="updateEditPreview()">
+                <input type="file" id="editImazhFile" accept="image/*" style="margin-top:6px" onchange="ngarkoFoto(this,'editImazh','editImagePreview')">
                 <div class="image-preview" id="editImagePreview">
                     <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
                 </div>
@@ -928,6 +929,7 @@
             <div class="form-group">
                 <label>URL e Imazhit (foto paraprake)</label>
                 <input type="text" id="addImazh" placeholder="https://..." oninput="updateAddPreview()">
+                <input type="file" id="addImazhFile" accept="image/*" style="margin-top:6px" onchange="ngarkoFoto(this,'addImazh','addImagePreview')">
                 <div class="image-preview" id="addImagePreview">
                     <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
                 </div>
