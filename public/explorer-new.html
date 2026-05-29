@@ -876,6 +876,7 @@
             <div class="form-group">
                 <label>URL e Imazhit (foto paraprake – për referencë)</label>
                 <input type="text" id="editImazh" placeholder="https://..." oninput="updateEditPreview()">
+                <input type="file" id="editImazhFile" accept="image/*" style="margin-top:6px" onchange="ngarkoFoto(this,'editImazh','editImagePreview')">
                 <div class="image-preview" id="editImagePreview">
                     <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
                 </div>
@@ -928,6 +929,7 @@
             <div class="form-group">
                 <label>URL e Imazhit (foto paraprake)</label>
                 <input type="text" id="addImazh" placeholder="https://..." oninput="updateAddPreview()">
+                <input type="file" id="addImazhFile" accept="image/*" style="margin-top:6px" onchange="ngarkoFoto(this,'addImazh','addImagePreview')">
                 <div class="image-preview" id="addImagePreview">
                     <div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>
                 </div>
@@ -1255,6 +1257,32 @@
             } else {
                 preview.innerHTML = '<div class="placeholder">🖼️ Vendosni URL për të parë imazhin</div>';
             }
+        };
+
+        window.ngarkoFoto = function(input, urlInputId, previewId) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('⚠️ Vetëm imazhe lejohen', 'error');
+                input.value = '';
+                return;
+            }
+            if (file.size > 8 * 1024 * 1024) {
+                showToast('⚠️ Imazhi duhet të jetë nën 8MB', 'error');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                document.getElementById(urlInputId).value = dataUrl;
+                document.getElementById(previewId).innerHTML = `<img src="${dataUrl}">`;
+                showToast('✅ Foto u ngarkua', 'success');
+            };
+            reader.onerror = function() {
+                showToast('❌ Nuk u lexua dot fotoja', 'error');
+            };
+            reader.readAsDataURL(file);
         };
 
         window.shtoVend = function() {
