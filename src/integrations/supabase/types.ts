@@ -89,7 +89,9 @@ export type Database = {
           contact: string | null
           created_at: string
           id: string
+          image_url: string | null
           lat: number | null
+          link_url: string | null
           lng: number | null
           name: string | null
           place_query: string
@@ -99,7 +101,9 @@ export type Database = {
           contact?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           lat?: number | null
+          link_url?: string | null
           lng?: number | null
           name?: string | null
           place_query: string
@@ -109,7 +113,9 @@ export type Database = {
           contact?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           lat?: number | null
+          link_url?: string | null
           lng?: number | null
           name?: string | null
           place_query?: string
