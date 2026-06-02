@@ -324,6 +324,26 @@ function Index() {
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
+          <Link to="/explorer-360">
+            <Button
+              variant="ghost"
+              className="h-11 px-3 glass-panel gap-2 hidden sm:inline-flex"
+              title="360° Explorer"
+              aria-label="360° Explorer"
+            >
+              <Globe2 className="h-5 w-5" />
+              <span className="text-sm font-medium">360° Explorer</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 glass-panel sm:hidden"
+              title="360° Explorer"
+              aria-label="360° Explorer"
+            >
+              <Globe2 className="h-5 w-5" />
+            </Button>
+          </Link>
           <Button
             onClick={() => setShowFamous((s) => !s)}
             variant="ghost"
