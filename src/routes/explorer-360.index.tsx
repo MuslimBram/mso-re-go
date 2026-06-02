@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Globe2, MapPin, Search, ArrowLeft, Sparkles, Box } from "lucide-react";
 import { ToursMap, type TourPin } from "@/components/explorer360/ToursMap";
 import { ExploreFab } from "@/components/explorer360/ExploreFab";
+import { AiGuide } from "@/components/explorer360/AiGuide";
 
 export const Route = createFileRoute("/explorer-360/")({
   component: ExplorerHub,
@@ -201,6 +202,7 @@ function ExplorerHub() {
       </section>
 
       <ExploreFab />
+      <AiGuide />
     </div>
   );
 }

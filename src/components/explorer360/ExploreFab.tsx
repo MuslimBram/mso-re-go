@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Globe2, Map, Glasses, Box, Store, Package, Route as RouteIcon, Calendar, Sparkles, Search, X } from "lucide-react";
+import { Globe2, Map, Glasses, Box, Store, Package, Route as RouteIcon, Calendar, Sparkles, Search, X, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 const items = [
@@ -13,6 +13,7 @@ const items = [
   { icon: Calendar, label: "Evente", to: "/", color: "from-red-500 to-orange-600" },
   { icon: Sparkles, label: "AI Guide", to: "/explorer-360", color: "from-yellow-500 to-amber-600" },
   { icon: Search, label: "Kërko", to: "/explorer-360", color: "from-slate-500 to-slate-700" },
+  { icon: Settings, label: "Admin", to: "/explorer-360/admin", color: "from-zinc-600 to-zinc-800" },
 ];
 
 export function ExploreFab() {
