@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-// @ts-expect-error - marzipano has no types
 import Marzipano from "marzipano";
 
 export interface SceneData {
