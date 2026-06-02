@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Explorer360IndexRouteImport } from './routes/explorer-360.index'
+import { Route as Explorer360ShowcaseRouteImport } from './routes/explorer-360.showcase'
 import { Route as Explorer360TourSlugRouteImport } from './routes/explorer-360.tour.$slug'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -35,6 +36,11 @@ const Explorer360IndexRoute = Explorer360IndexRouteImport.update({
   path: '/explorer-360/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Explorer360ShowcaseRoute = Explorer360ShowcaseRouteImport.update({
+  id: '/explorer-360/showcase',
+  path: '/explorer-360/showcase',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Explorer360TourSlugRoute = Explorer360TourSlugRouteImport.update({
   id: '/explorer-360/tour/$slug',
   path: '/explorer-360/tour/$slug',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -69,6 +78,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/showcase'
     | '/explorer-360/'
     | '/explorer-360/tour/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/showcase'
     | '/explorer-360'
     | '/explorer-360/tour/$slug'
   id:
@@ -83,6 +94,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/showcase'
     | '/explorer-360/'
     | '/explorer-360/tour/$slug'
   fileRoutesById: FileRoutesById
@@ -91,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  Explorer360ShowcaseRoute: typeof Explorer360ShowcaseRoute
   Explorer360IndexRoute: typeof Explorer360IndexRoute
   Explorer360TourSlugRoute: typeof Explorer360TourSlugRoute
 }
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Explorer360IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explorer-360/showcase': {
+      id: '/explorer-360/showcase'
+      path: '/explorer-360/showcase'
+      fullPath: '/explorer-360/showcase'
+      preLoaderRoute: typeof Explorer360ShowcaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer-360/tour/$slug': {
       id: '/explorer-360/tour/$slug'
       path: '/explorer-360/tour/$slug'
@@ -139,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  Explorer360ShowcaseRoute: Explorer360ShowcaseRoute,
   Explorer360IndexRoute: Explorer360IndexRoute,
   Explorer360TourSlugRoute: Explorer360TourSlugRoute,
 }
