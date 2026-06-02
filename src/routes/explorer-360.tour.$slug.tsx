@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight, Glasses, MapPin, Volume2, X, Globe2 } from "lucide-react";
 import { PanoramaViewer, type SceneData } from "@/components/explorer360/PanoramaViewer";
 import { ExploreFab } from "@/components/explorer360/ExploreFab";
+import { AiGuide } from "@/components/explorer360/AiGuide";
 
 export const Route = createFileRoute("/explorer-360/tour/$slug")({
   component: TourPage,
@@ -243,6 +244,7 @@ function TourPage() {
       )}
 
       <ExploreFab />
+      <AiGuide context={`Tour: ${tour.title}. ${tour.description ?? ""}${currentScene ? `. Skena aktuale: ${currentScene.name}` : ""}`} />
 
       {/* Silence unused-icon warning */}
       <span className="hidden"><Volume2 /></span>
