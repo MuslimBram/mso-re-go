@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Explorer360IndexRouteImport } from './routes/explorer-360.index'
 import { Route as Explorer360ShowcaseRouteImport } from './routes/explorer-360.showcase'
+import { Route as Explorer360AdminRouteImport } from './routes/explorer-360.admin'
 import { Route as Explorer360TourSlugRouteImport } from './routes/explorer-360.tour.$slug'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -41,6 +42,11 @@ const Explorer360ShowcaseRoute = Explorer360ShowcaseRouteImport.update({
   path: '/explorer-360/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Explorer360AdminRoute = Explorer360AdminRouteImport.update({
+  id: '/explorer-360/admin',
+  path: '/explorer-360/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Explorer360TourSlugRoute = Explorer360TourSlugRouteImport.update({
   id: '/explorer-360/tour/$slug',
   path: '/explorer-360/tour/$slug',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
     | '/explorer-360/tour/$slug'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360'
     | '/explorer-360/tour/$slug'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
     | '/explorer-360/tour/$slug'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  Explorer360AdminRoute: typeof Explorer360AdminRoute
   Explorer360ShowcaseRoute: typeof Explorer360ShowcaseRoute
   Explorer360IndexRoute: typeof Explorer360IndexRoute
   Explorer360TourSlugRoute: typeof Explorer360TourSlugRoute
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Explorer360ShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explorer-360/admin': {
+      id: '/explorer-360/admin'
+      path: '/explorer-360/admin'
+      fullPath: '/explorer-360/admin'
+      preLoaderRoute: typeof Explorer360AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer-360/tour/$slug': {
       id: '/explorer-360/tour/$slug'
       path: '/explorer-360/tour/$slug'
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  Explorer360AdminRoute: Explorer360AdminRoute,
   Explorer360ShowcaseRoute: Explorer360ShowcaseRoute,
   Explorer360IndexRoute: Explorer360IndexRoute,
   Explorer360TourSlugRoute: Explorer360TourSlugRoute,
@@ -166,3 +187,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
