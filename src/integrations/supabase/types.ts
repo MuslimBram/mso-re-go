@@ -122,6 +122,250 @@ export type Database = {
         }
         Relationships: []
       }
+      showcase_products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          featured: boolean
+          id: string
+          model_url: string | null
+          published: boolean
+          sketchfab_url: string | null
+          slug: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          model_url?: string | null
+          published?: boolean
+          sketchfab_url?: string | null
+          slug: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          model_url?: string | null
+          published?: boolean
+          sketchfab_url?: string | null
+          slug?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tour_hotspots: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link_url: string | null
+          media_url: string | null
+          pitch: number
+          scene_id: string
+          target_scene_id: string | null
+          title: string | null
+          type: string
+          yaw: number
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          media_url?: string | null
+          pitch?: number
+          scene_id: string
+          target_scene_id?: string | null
+          title?: string | null
+          type?: string
+          yaw?: number
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          media_url?: string | null
+          pitch?: number
+          scene_id?: string
+          target_scene_id?: string | null
+          title?: string | null
+          type?: string
+          yaw?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_hotspots_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "tour_scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_hotspots_target_scene_id_fkey"
+            columns: ["target_scene_id"]
+            isOneToOne: false
+            referencedRelation: "tour_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          order_index: number
+          tour_id: string
+          type: string
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          tour_id: string
+          type?: string
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          tour_id?: string
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_media_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_scenes: {
+        Row: {
+          created_at: string
+          id: string
+          initial_fov: number
+          initial_pitch: number
+          initial_yaw: number
+          name: string
+          order_index: number
+          panorama_url: string | null
+          source: string
+          street_view_lat: number | null
+          street_view_lng: number | null
+          street_view_pano_id: string | null
+          tour_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          initial_fov?: number
+          initial_pitch?: number
+          initial_yaw?: number
+          name: string
+          order_index?: number
+          panorama_url?: string | null
+          source?: string
+          street_view_lat?: number | null
+          street_view_lng?: number | null
+          street_view_pano_id?: string | null
+          tour_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          initial_fov?: number
+          initial_pitch?: number
+          initial_yaw?: number
+          name?: string
+          order_index?: number
+          panorama_url?: string | null
+          source?: string
+          street_view_lat?: number | null
+          street_view_lng?: number | null
+          street_view_pano_id?: string | null
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_scenes_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tours: {
+        Row: {
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          featured: boolean
+          id: string
+          lat: number | null
+          lng: number | null
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          featured?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          featured?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

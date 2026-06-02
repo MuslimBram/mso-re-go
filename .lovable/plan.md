@@ -1,43 +1,85 @@
-# Plani i ndryshimeve
+## 1) Rregullimi i figurës (HAPI I PARË)
 
-## 1. "Explorer New" si modal popup
-- Hiq `<a href="/explorer-new.html" target="_blank">` dhe zëvendëso me një `Button` që vendos `showExplorerNew=true`.
-- Shto një overlay full-screen (z-50) me `<iframe src="/explorer-new.html">` që mbulon faqen, me një buton `X` sipër-djathtas për mbylljen.
-- Animim i lehtë fade-in (klasa `glass-panel` ekzistuese).
+Problemi: në `public/explorer-new.html` sfondi 360° ka `filter: brightness(0.35) blur(1.5px)` mbi iframe + dy gradient të errët mbi të. Kjo bën që pamja të duket si "kamera nate" (foto #31). Në mobile + në preview të Lovable kjo del edhe më keq sepse iframe i Street View nuk ngarkon dot dhe del me artefakte ngjyrash (foto #32 – pamja violet/inverted vjen nga iframe i papërfunduar i Google nën gradient blu).
 
-## 2. Hiq kërkesën e Google Maps API key për vizitorët
-- Çelësi do të ruhet si **Build Secret** në Workspace Settings me emrin `VITE_GOOGLE_MAPS_API_KEY` (kodi tashmë e ka fallback-un te `src/lib/google-maps-key.ts`).
-- Hapi në build mode: do të të dërgoj kërkesën `add_secret` për ta vendosur njëherë.
-- Pasi të vendoset, `getGoogleMapsKey()` do ta kthejë automatikisht dhe `ApiKeyGate` nuk do shfaqet më për askënd.
-- **Kujdes:** çelësi do të bundlohet në kodin e klientit. Sigurohu që në Google Cloud Console ta kesh të kufizuar me HTTP referrer (`https://rrogozhina-guide.com/*`, `https://www.rrogozhina-guide.com/*`, `https://mso.lovable.app/*`).
+Ndryshime:
+- Heq filtrin e errët nga `.bg360 iframe` (asnjë `brightness` / `blur`).
+- Zëvendësoj `transform: scale(1.25)` me `scale(1.05)` (më e qartë në mobile).
+- Ul errësirën e `.overlay`: gradient i butë `rgba(0,0,0,0.15) → rgba(0,0,0,0.55)`, që teksti të lexohet pa "fshehur" foton.
+- Shtoj `@media (max-width: 640px)` ku overlay-i bie edhe më shumë dhe iframe `scale(1)`.
 
-## 3. Kufizime për vizitorët (jo të kyçur)
-Kontrolli: `if (!user) hide`. Për përdoruesin e kyçur (pronarin/ty) gjithçka mbetet siç është.
+Asgjë tjetër në explorer-new nuk preket → dialogët "Shto vend / Edito" mbeten siç janë.
 
-Do të fshihen për vizitorët:
-- Butoni **Settings** (hiq API key) — gjithmonë i fshehur tani, sepse çelësi është global.
-- Butoni **Star** (Ruaj si favorite).
-- Butoni **Library** (Favoritet).
-- Te `QuranPlayer`: fusha e ngarkimit (upload) të skedarëve MP3.
+## 2) Moduli i ri "360° Explorer" – i pavarur
 
-## 4. Forma e komenteve / sugjerimeve të vendeve
-Vizitorët mund të dërgojnë sugjerime për vende të reja edhe pa u kyçur.
+Buton i ri në top bar të faqes kryesore: **🌐 360° Explorer**. Hap routën `/explorer-360`. Asnjë faqe ekzistuese nuk preket veç shtimit të butonit.
 
-- **Tabelë e re** `place_suggestions` me kolonat: `id`, `name`, `place_query` (teksti i vendit), `comment`, `contact` (opsional), `lat`/`lng` (opsionale — koordinatat aktuale të pamjes), `created_at`.
-- **RLS:** `insert` i lejuar për të gjithë (anon + authenticated); `select` vetëm për pronarin (ti) — do të identifikohem me një rol `admin` te tabela `user_roles` (po nuk ekziston, do ta krijoj).
-- Buton i ri **"Sugjero një vend"** te shiriti i sipërm (ose poshtë butonit Kur'ani), që hap një `Dialog` me formë të thjeshtë (emër, vend, koment).
+### Faqet (rrugë të reja)
+```
+/explorer-360                 – Hub: hartë + listë + kategori + kërkim + featured
+/explorer-360/tour/$slug      – Viewer i një tour-i (Marzipano + hotspots + minimap + VR + audio + galeri + video)
+/explorer-360/showcase        – Showcase 3D (Sketchfab embed + rotate/zoom/fullscreen)
+/_authenticated/admin/tours   – Admin: upload panorama, lidh skena, hotspots, publiko
+/_authenticated/admin/showcase – Admin: upload modele 3D & produkte
+```
 
-## 5. Përmirësime te Quran Player
-- **Autoplay:** kur faqja ngarkohet, fillon menjëherë sura e parë (me `volume` ekzistues). Nëse browseri bllokon autoplay-in pa interaksion, do të provojë `.play()` dhe nëse dështon do të nisë në klikun e parë diku në faqe.
-- **Shirit progresi nën emrin e sures:** `<progress>` ose `div` i animuar që pasqyron `audio.currentTime / audio.duration`, përditësohet me event `timeupdate`. I klikueshëm për seek.
-- **Buton "Ajeti i mëparshëm":** meqë MP3-të janë për sure të plotë (jo per ajet), zbatimi praktik është një buton **skip ‑10s** (kthim 10 sekonda mbrapa). Nëse `currentTime < 3s`, kalon në suren e mëparshme. Do ta etiketoj si "↶ Mbrapa" me ikonë.
-  - *Shënim:* për kthim të saktë ajet-për-ajet do duhej audio per-ajet (API tjetër) — mund ta shtoj në një fazë të dytë nëse dëshiron.
+### Hub (/explorer-360)
+- Hartë interaktive (**Leaflet + OpenStreetMap**) me marker për çdo tour.
+- Listë me karta (cover, titull, përshkrim, GPS, butona "Hapu në Google Maps" & "Fillo Tour-in").
+- Kërkim + chips për kategori (Histori, Natyrë, Biznes, Atraksion…).
+- Seksion "Featured" sipër.
+- Floating Action Button në kënd poshtë-djathtas: **Explore Options** → hap menu (desktop: popover me karta të animuara; mobile: bottom-sheet) me: Map, 360 Tour, VR, Atraksione, Biznese, Produkte, 3D, Rrugë, Evente, Kërko, AI Guide.
 
-## Detajet teknike
-- Skedarët që preken: `src/routes/index.tsx`, `src/components/vr/QuranPlayer.tsx`, krijim `src/components/vr/SuggestPlaceDialog.tsx`, migracion i ri SQL për `place_suggestions` (+`user_roles` nëse mungon).
-- Asnjë ndryshim te `client.ts`, `types.ts`, `.env` (auto-generated).
-- Build secret: `VITE_GOOGLE_MAPS_API_KEY` (do ta kërkoj në hapin e parë të build mode).
+### Tour Viewer (/explorer-360/tour/$slug)
+- **Marzipano** për panoramë fullscreen (mbështet edhe Street View pano nga Google si fallback kur tour-i s'ka foto të vetën).
+- Hotspots: info, audio, video, foto, produkt – konfigurueshme nga admin.
+- Next / Previous scene + minimap me shigjetë drejtimi.
+- Buton VR Mode (WebXR; fallback stereo i thjeshtë).
+- Audio guide player + galeri thumbnail + video embed.
+- Gyroscope në mobile (DeviceOrientationEvent).
 
-## Pyetje për konfirmim
-1. Çelësin Google Maps a e ke gati ta vendosësh? (do të kërkohet sapo të kalojmë në build mode)
-2. Për "Sugjero vend" — a duhet të kërkojë email/kontakt të detyrueshëm, apo opsional?
+### Showcase 3D (/explorer-360/showcase)
+- Faza 1: integrim me **Sketchfab embed** (model URL nga admin) – rotate, zoom, fullscreen out-of-the-box, mobile-friendly.
+- Kategori produkte + filter.
+
+### Admin
+- `/_authenticated/admin/tours`: krijoji/editoji tour, ngarko panorama (Supabase Storage), shto skena, lidhe me hotspots, vendos GPS, publish/draft.
+- `/_authenticated/admin/showcase`: krijoji produkte 3D me Sketchfab URL ose ngarko `.glb`, kategori, thumbnail.
+- Aksesi vetëm për rolin `admin` (përdorim tabelën ekzistuese `user_roles` + `has_role`).
+
+### Database (migracion i ri)
+Tabela të reja, të gjitha me RLS + GRANTs:
+- `tours` (id, slug, title, description, cover_url, category, lat, lng, featured, published, created_by, created_at)
+- `tour_scenes` (id, tour_id, name, panorama_url, source: 'upload'|'streetview', street_view_pano_id, initial_yaw, initial_pitch, order)
+- `tour_hotspots` (id, scene_id, type: info|audio|video|image|product|link, yaw, pitch, title, body, media_url, target_scene_id)
+- `tour_media` (id, tour_id, type: gallery|audio|video, url, caption)
+- `showcase_products` (id, slug, title, description, category, sketchfab_url, model_url, thumbnail_url, published, created_at)
+
+RLS: publik `SELECT` për rreshtat `published=true`; admin (nëpërmjet `has_role`) bën të gjitha. Bucket-e të reja Storage: `tour-panoramas` (publik), `tour-media` (publik), `showcase-models` (publik).
+
+### Si "modul" i izoluar
+- Gjithçka jeton nën `src/routes/explorer-360/*` dhe `src/components/explorer360/*`.
+- Asnjë import në komponentët ekzistues `vr/*`.
+- Mund të çaktivizohet duke fshirë butonin e ri nga top bar dhe foldrin – pjesa tjetër mbetet e paprekur.
+
+## 3) Çfarë do bëj në këtë rraund (deri sa të thuash "Vazhdo")
+
+Hap pas hapi, "end-to-end" sa maksimum, por do ndaloj para se të kalojmë te admin & tabelat e mëdha që duan miratim:
+
+1. **Fix CSS** në `public/explorer-new.html` (pika 1 më sipër).
+2. **Shtoj butonin** "🌐 360° Explorer" në top bar të `src/routes/index.tsx`.
+3. **Krijoj migracion** për 5 tabelat + 3 bucket-e + politika RLS + GRANTs (do të kërkoj miratim).
+4. **Faqja Hub** `/explorer-360` me: Leaflet hartë, listë kartash, kërkim, kategori, FAB "Explore Options" me bottom-sheet/popover.
+5. **Viewer** `/explorer-360/tour/$slug` me Marzipano + skena + hotspots bazikë (info/foto) + minimap + buton VR + audio.
+6. Instalim varësish: `marzipano`, `leaflet`, `react-leaflet`.
+
+Ndaloj këtu dhe pres komandën **"Vazhdo"**. Pastaj në raundin tjetër:
+7. Showcase 3D + integrimi Sketchfab.
+8. Admin panel për tours + showcase.
+9. Hotspots audio/video/produkt + galeri + WebXR i plotë + gyroscope + AI Guide.
+
+## Shënime teknike
+- Marzipano + Leaflet janë libra të pavarur, pa varësi në Three.js – mbahen të lehta.
+- WebXR përdor `navigator.xr` me fallback në stereo split-screen (e kemi tashmë te `VRStereoView`).
+- Google Street View vazhdon të punojë me çelësin ekzistues `VITE_GOOGLE_MAPS_API_KEY`.
+- Asnjë skedar i mbrojtur (`client.ts`, `types.ts`, `.env`, `config.toml` projekt-level) nuk preket.
