@@ -1,81 +1,109 @@
-## Çfarë do të shtohet në "360° Explorer"
+# Faza D — Publikimi i pavarur nga Google Street View
 
-Përveç pjesës që ekziston tashmë (ngarkim panorame, hotspot-e, harta), do të shtohen 3 module që mungojnë krahasuar me referencën:
+## Parimi kryesor
+Panorama jeton **gjithmonë** në aplikacionin tonë. Google Street View është vetëm një **kanal shpërndarjeje opsional**. Çdo dështim, refuzim ose fshirje në anën e Google nuk ndikon në panoramen tonë.
 
-### 1. AI Privacy Scan (Gemini Vision) — para çdo ngarkimi
-
-Hapi i ri detyrues mes "Zgjedh foton 360°" dhe "Ruaj në storage":
-
+```text
+[Krijuesi ngarkon panoramen]
+        │
+        ▼
+[Storage + DB lokale]  ◄──────── gjithmonë e disponueshme, e editueshme
+        │
+        ├── Publish lokalisht (default, automatik kur tour-i publikohet)
+        │
+        └── Publish në GSV (opsional, kanal i veçantë me status të vetin)
+                  │
+                  ├── pending_review → approved → publishing → published
+                  ├── failed  (mund të Republish-ohet)
+                  ├── rejected (nga admini ose Google)
+                  └── unpublished (hequr nga GSV, mbetet lokal)
 ```
-Skedari → Preview → [Skanim AI] → Raport → [Aprovo / Blur më shumë / Refuzo] → Upload
-```
 
-- Pasi përdoruesi zgjedh panoramen, ajo dërgohet te një server function i ri që e thërret Gemini 2.5 Flash (vision) me prompt:
-  *"Identifiko të gjitha fytyrat e njerëzve, targat e makinave, dokumentet me të dhëna personale dhe ekranet me përmbajtje të lexueshme. Kthe një JSON me bounding box-e normalizuara (0–1) dhe llojin për secilën."*
-- Përgjigja e strukturuar përmes `Output.object` me Zod schema: `{ detections: [{ type: "face"|"plate"|"document"|"screen", x, y, w, h, confidence }] }`.
-- Në klient, mbi panoramen vizatohen kutitë e propozuara dhe aplikohet **gaussian blur** automatikisht në canvas mbi to.
-- Përdoruesi mund të: shtojë kuti me dorë, fshijë kuti false-positive, ndryshojë intensitetin e blur.
-- Vetëm panorama e re (me blur të aplikuar dhe rikoduar si JPEG) ngarkohet në storage — origjinali NUK ruhet.
-- Nëse AI gjen >0 detektime me confidence ≥0.7 dhe përdoruesi nuk ka aplikuar blur, butoni "Ngarko" bllokohet me mesazh paralajmërues.
+## Sjellja e re
 
-### 2. Modul i ri "Publikim në Google Street View"
+1. **Ngarkimi i panoramës** ruan gjithçka në `tour_scenes` + `tour-panoramas` bucket. Asgjë nuk varet nga Google.
+2. **Editimi** (riemërtim, lëvizje markeri, heading, blur shtesë, fshirje hotspot-esh) është gjithnjë i lejuar, edhe pas publikimit në GSV. Pas çdo editi që ndryshon pamjen, statusi GSV bie në `stale` dhe krijuesi mund të zgjedhë "Republish".
+3. **Publish lokal**: kontrollohet nga fusha `tours.published` + një flag i ri `tour_scenes.local_published` (default `true`) që lejon fshehjen e një skene të vetme nga aplikacioni pa fshirë të dhënat.
+4. **Publish në GSV**: krijues kërkon publikim → futet në `gsv_publish_queue` → admini aprovon → worker-i ngarkon → status final ruhet te skena.
+5. **Unpublish nga GSV**: thirrje `photo.delete` te Google; lokali mbetet i paprekur; `gsv_pano_id`, `gsv_url`, `gsv_upload_time` zerohen; statusi → `unpublished`.
+6. **Republish**: rikrijon kërkesë te radha, ri-aprovohet (ose auto-aprovohet nëse skena ka qenë publikuar më parë — vendoset me toggle adminit).
+7. **Failed/Rejected**: ruajmë mesazhin e gabimit dhe një `attempt_count`; butoni "Republish" e fut sërish në radhë.
+8. **Fshirja nga Google jashtë sistemit tonë**: një `gsv-sync` periodik kontrollon `photo.get`. Nëse Google kthen 404, statusi bie në `unpublished_remote` dhe panorama lokale **NUK** preket.
 
-Çdo tour fiton një tab të ri **"Street View"** me:
-- Listën e skenave të tour-it me statusin: `Pa ngarkuar` / `Në pritje` / `E publikuar në GSV` / `Refuzuar`.
-- Fushat e reja për skenë: `gsv_pano_id`, `gsv_url`, `gsv_upload_time`, `gsv_thumbnail`, `heading`, `floor`, `floor_name`.
-- Lidhjet (graph) mes panoramave: `gsv_connections` — Anchor/Target — që krijojnë navigim mes panoramave brenda Street View.
-- Butoni **"Publiko në Street View"** thërret një server route që përdor **Google Street View Publish API** me një llogari të vetme qendrore (OAuth refresh token i jotji i ruajtur si secret).
-- Butoni **"Sync from GSV"** merr metadatat nga Google dhe i ruan në DB.
-- Hartë e re mini-Google-Maps për çdo skenë me dragable marker + shigjetë headingu (si në screenshot-in tënd), me butonin "Save Location & Heading".
+## Skema e të dhënave (migrim i ri)
 
-### 3. Roli dhe lejet
+Te `tour_scenes` shtohen:
+- `local_published boolean not null default true` — kontrolli i shfaqjes lokale.
+- `gsv_status text not null default 'not_published'` — vlerat:
+  `not_published | pending_review | approved | publishing | published | failed | rejected | unpublished | unpublished_remote | stale`.
+- `gsv_last_error text` — mesazhi i fundit i dështimit.
+- `gsv_attempt_count int not null default 0`.
+- `gsv_last_synced_at timestamptz`.
+- `content_hash text` — hash i panoramës së pastruar; kur ndryshon → status `stale`.
 
-- Çdo vizitor i regjistruar mund të krijojë tour-in e tij dhe ta dërgojë për publikim në GSV, por kërkesa kalon në një radhë `gsv_publish_queue` që e aprovon admin (që mos abuzohet llogaria qendrore).
-- Statuset: `draft → pending_review → approved → publishing → published / rejected`.
+Te `gsv_publish_queue` shtohen:
+- `action text not null default 'publish'` — `publish | unpublish | republish`.
+- `attempt_count int not null default 0`.
+- `last_error text`.
 
----
+Të gjitha ndryshimet me GRANT-et përkatëse (`authenticated` + `service_role`) dhe RLS si më parë (krijuesi i tour-it + admin).
 
-## Detaje teknike
+## Endpoint-et (TanStack)
 
-### Tabela të reja / kolona të reja
+`createServerFn` për veprime nga UI (të mbrojtura me `requireSupabaseAuth`):
+- `requestGsvPublish({ sceneId })` — fut në radhë me `action='publish'`.
+- `requestGsvUnpublish({ sceneId })` — `action='unpublish'`.
+- `requestGsvRepublish({ sceneId })` — `action='republish'`.
+- `setLocalPublished({ sceneId, value })` — toggle lokal.
+- `adminApproveQueue({ queueId })`, `adminRejectQueue({ queueId, reason })` — vetëm admin (`has_role`).
+- `adminRunQueueItem({ queueId })` — admin force-run worker-it për një rresht.
 
-Migrim i ri që shton:
-- Te `tour_scenes`: `gsv_pano_id text`, `gsv_url text`, `gsv_upload_time timestamptz`, `gsv_thumbnail text`, `heading double precision default 0`, `floor int default 0`, `floor_name text`, `privacy_scan jsonb` (raporti i fundit i AI), `privacy_approved boolean default false`.
-- Tabelë e re `gsv_connections (id, from_scene_id, to_scene_id, gsv_anchor_pano, gsv_target_pano, created_at)` me RLS sipas pronësisë së tour-it.
-- Tabelë e re `gsv_publish_queue (id, scene_id, status, requested_by, reviewed_by, error, created_at, updated_at)`.
+Server route për punët e gjata / të jashtme (`src/routes/api/public/`):
+- `gsv-worker.ts` — POST, kërkon header sekret `x-gsv-worker-token`; merr rreshtat `approved`, bën `photo.startUpload → photo.create / photo.delete` me access token të rifreskuar nga refresh token-i, përditëson skenën dhe radhën.
+- `gsv-sync.ts` — POST cron, kontrollon `photo.get` për të gjitha skenat `published`.
+- `gsv-oauth-callback.ts` — i përdorur **vetëm një herë** për të nxjerrë refresh token-in e llogarisë qendrore (nuk publikohet në UI).
 
-### Server functions / routes të reja
-- `src/lib/privacy-scan.functions.ts` — `scanPanorama({ imageUrl })` → thërret Lovable AI Gateway (`google/gemini-2.5-pro` ose `gemini-3-flash-preview` vision) me `Output.object` schema, kthen detektimet.
-- `src/routes/api/gsv-publish.ts` — server route që pranon scene_id, merr panoramen e pastruar nga storage, e ngarkon në Street View Publish API me access token të rifreskuar nga refresh token-i qendror, pastaj ruan `gsv_pano_id` në DB.
-- `src/routes/api/gsv-sync.ts` — për sinkronizimin e metadatave.
-- `src/routes/api/gsv-connect.ts` — për krijimin e lidhjeve (BatchUpdate `connections`).
+Worker thirret nga:
+- `adminApproveQueue` (fire-and-forget pas aprovimit), dhe
+- një cron `pg_cron` çdo 2 min që POST-on në `/api/public/gsv-worker` për retry të dështuara me `attempt_count < 5` (exponential backoff).
 
-### Komponentë të rinj
-- `src/components/explorer360/PrivacyScanner.tsx` — kanvasi me overlay të kutive, kontrollet manual.
-- `src/components/explorer360/GsvPublishPanel.tsx` — tab-i i ri me listën e skenave dhe butonat.
-- `src/components/explorer360/SceneMapEditor.tsx` — Google Maps mini me marker + heading.
-- Te `explorer-360.admin.tsx`: integrim i `PrivacyScanner` para `uploadPanorama()` ekzistuese.
+## Sekretat që duhen
+- `GOOGLE_GSV_CLIENT_ID`
+- `GOOGLE_GSV_CLIENT_SECRET`
+- `GOOGLE_GSV_REFRESH_TOKEN` (nxirret pas një OAuth flow-i të vetëm përmes callback-ut)
+- `GSV_WORKER_TOKEN` (mbron `/api/public/gsv-worker` dhe `/api/public/gsv-sync` nga thirrjet publike)
 
-### Secrets që duhen
-- `GOOGLE_STREETVIEW_OAUTH_CLIENT_ID`
-- `GOOGLE_STREETVIEW_OAUTH_CLIENT_SECRET`
-- `GOOGLE_STREETVIEW_REFRESH_TOKEN` (e llogarisë qendrore "Rrogozhina Guide")
+Do të kërkohen me `add_secret` pas miratimit të planit.
 
-Këto do t'i kërkoj me `add_secret` pasi të aprovohet plani. Llogaria Google qendrore duhet:
-1. Të ketë Street View Publish API të aktivizuar në Google Cloud Console.
-2. Të bëjë OAuth një herë në një web flow lokal për të nxjerrë refresh token-in me scope `https://www.googleapis.com/auth/streetviewpublish`.
+## UI — `GsvPublishPanel` (zëvendëson versionin aktual)
 
-### LOVABLE_API_KEY
-Tashmë ekziston në secrets — s'duhet shtuar.
+Për çdo skenë:
+- Badge statusi (jeshile `published`, blu `pending_review`, e verdhë `stale`/`failed`, gri `not_published`/`unpublished`, e kuqe `rejected`).
+- Meta: `gsv_pano_id`, link `gsv_url`, datë publikimi, attempt count, mesazhi i fundit i gabimit.
+- Butona kontekstualë:
+  - `not_published` → **Publish në GSV**, **Publish vetëm lokalisht** (toggle `local_published`).
+  - `pending_review` / `approved` / `publishing` → **Anulo kërkesën**.
+  - `published` → **Unpublish nga GSV**, **Republish (sinkronizo)**.
+  - `failed` / `rejected` / `unpublished_remote` → **Republish**, **Shih gabimin**.
+  - `stale` → **Republish me ndryshimet e reja**, **Mbaj versionin aktual në GSV**.
+- Toggle "Shfaqe në aplikacion" për `local_published`.
+- Butoni "Edito skenën" gjithmonë i hapur — hap editorin ekzistues (emër, hartë/heading, blur shtesë, hotspot-e).
 
----
+## Paneli i adminit (`/admin/gsv-queue`, route i ri i mbrojtur)
 
-## Rendi i punës (fazat)
+Tab-et: **Pending review · Approved · Publishing · Published · Failed · Rejected · Unpublished**.
+Çdo rresht: miniaturë + emër skene, tour, krijues, statusi, attempts, gabim, kohë. Veprime: **Aprovo / Refuzo (me arsye) / Re-run worker / Force unpublish / Hap skenën**.
 
-1. **Faza A** — Migrim DB (kolonat e reja + 2 tabelat e reja + RLS).
-2. **Faza B** — AI Privacy Scan: server function + `PrivacyScanner.tsx` + integrimi në admin upload flow.
-3. **Faza C** — UI për Street View tab + harta për-skenë me heading.
-4. **Faza D** — Pasi të jepen secrets-at e Google, server route për publikim + sync.
-5. **Faza E** — Radha e aprovimit nga admin.
+## Rendi i implementimit pas miratimit
+1. Migrim DB (kolonat + radha e re).
+2. ServerFn-të për veprimet e UI (pa Google ende) + komponentët e rinj UI që funksionojnë me `not_published`/`pending_review`/`approved` (mock worker).
+3. Paneli i adminit me veprimet aprovim/refuzim.
+4. OAuth callback një-përdorimësh + ruajtja e refresh token-it si secret.
+5. Worker real (`/api/public/gsv-worker`) që flet me Street View Publish API.
+6. Sync periodik + cron retry.
+7. Dokument i shkurtër operacional (si rifreskohet refresh-token, si rinisë worker-i, si trajtohet 404 nga Google).
 
-Pas planit dhe miratimit, fillimi me Fazën A + B (pjesa që nuk pret secrets-at e Google).
+## Garanca përfundimtare
+- Asnjë rrugë në kod nuk fshin objekte nga `tour-panoramas` bucket apo rreshtat e `tour_scenes` si pjesë e flow-it të GSV.
+- Çdo veprim drejt Google është **shtesë**, kurrë **zëvendësues**.
+- Edhe pa GSV fare, aplikacioni vazhdon të funksionojë identik me sot.
