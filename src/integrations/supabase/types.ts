@@ -53,6 +53,89 @@ export type Database = {
         }
         Relationships: []
       }
+      gsv_connections: {
+        Row: {
+          created_at: string
+          from_scene_id: string
+          gsv_anchor_pano: string | null
+          gsv_target_pano: string | null
+          id: string
+          to_scene_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_scene_id: string
+          gsv_anchor_pano?: string | null
+          gsv_target_pano?: string | null
+          id?: string
+          to_scene_id: string
+        }
+        Update: {
+          created_at?: string
+          from_scene_id?: string
+          gsv_anchor_pano?: string | null
+          gsv_target_pano?: string | null
+          id?: string
+          to_scene_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsv_connections_from_scene_id_fkey"
+            columns: ["from_scene_id"]
+            isOneToOne: false
+            referencedRelation: "tour_scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gsv_connections_to_scene_id_fkey"
+            columns: ["to_scene_id"]
+            isOneToOne: false
+            referencedRelation: "tour_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gsv_publish_queue: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          requested_by: string | null
+          reviewed_by: string | null
+          scene_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by?: string | null
+          reviewed_by?: string | null
+          scene_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by?: string | null
+          reviewed_by?: string | null
+          scene_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gsv_publish_queue_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "tour_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       history: {
         Row: {
           id: string
@@ -265,6 +348,13 @@ export type Database = {
       tour_scenes: {
         Row: {
           created_at: string
+          floor: number
+          floor_name: string | null
+          gsv_pano_id: string | null
+          gsv_thumbnail: string | null
+          gsv_upload_time: string | null
+          gsv_url: string | null
+          heading: number
           id: string
           initial_fov: number
           initial_pitch: number
@@ -272,6 +362,8 @@ export type Database = {
           name: string
           order_index: number
           panorama_url: string | null
+          privacy_approved: boolean
+          privacy_scan: Json | null
           source: string
           street_view_lat: number | null
           street_view_lng: number | null
@@ -280,6 +372,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          floor?: number
+          floor_name?: string | null
+          gsv_pano_id?: string | null
+          gsv_thumbnail?: string | null
+          gsv_upload_time?: string | null
+          gsv_url?: string | null
+          heading?: number
           id?: string
           initial_fov?: number
           initial_pitch?: number
@@ -287,6 +386,8 @@ export type Database = {
           name: string
           order_index?: number
           panorama_url?: string | null
+          privacy_approved?: boolean
+          privacy_scan?: Json | null
           source?: string
           street_view_lat?: number | null
           street_view_lng?: number | null
@@ -295,6 +396,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          floor?: number
+          floor_name?: string | null
+          gsv_pano_id?: string | null
+          gsv_thumbnail?: string | null
+          gsv_upload_time?: string | null
+          gsv_url?: string | null
+          heading?: number
           id?: string
           initial_fov?: number
           initial_pitch?: number
@@ -302,6 +410,8 @@ export type Database = {
           name?: string
           order_index?: number
           panorama_url?: string | null
+          privacy_approved?: boolean
+          privacy_scan?: Json | null
           source?: string
           street_view_lat?: number | null
           street_view_lng?: number | null

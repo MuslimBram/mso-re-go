@@ -1,85 +1,81 @@
-## 1) Rregullimi i figurës (HAPI I PARË)
+## Çfarë do të shtohet në "360° Explorer"
 
-Problemi: në `public/explorer-new.html` sfondi 360° ka `filter: brightness(0.35) blur(1.5px)` mbi iframe + dy gradient të errët mbi të. Kjo bën që pamja të duket si "kamera nate" (foto #31). Në mobile + në preview të Lovable kjo del edhe më keq sepse iframe i Street View nuk ngarkon dot dhe del me artefakte ngjyrash (foto #32 – pamja violet/inverted vjen nga iframe i papërfunduar i Google nën gradient blu).
+Përveç pjesës që ekziston tashmë (ngarkim panorame, hotspot-e, harta), do të shtohen 3 module që mungojnë krahasuar me referencën:
 
-Ndryshime:
-- Heq filtrin e errët nga `.bg360 iframe` (asnjë `brightness` / `blur`).
-- Zëvendësoj `transform: scale(1.25)` me `scale(1.05)` (më e qartë në mobile).
-- Ul errësirën e `.overlay`: gradient i butë `rgba(0,0,0,0.15) → rgba(0,0,0,0.55)`, që teksti të lexohet pa "fshehur" foton.
-- Shtoj `@media (max-width: 640px)` ku overlay-i bie edhe më shumë dhe iframe `scale(1)`.
+### 1. AI Privacy Scan (Gemini Vision) — para çdo ngarkimi
 
-Asgjë tjetër në explorer-new nuk preket → dialogët "Shto vend / Edito" mbeten siç janë.
+Hapi i ri detyrues mes "Zgjedh foton 360°" dhe "Ruaj në storage":
 
-## 2) Moduli i ri "360° Explorer" – i pavarur
-
-Buton i ri në top bar të faqes kryesore: **🌐 360° Explorer**. Hap routën `/explorer-360`. Asnjë faqe ekzistuese nuk preket veç shtimit të butonit.
-
-### Faqet (rrugë të reja)
 ```
-/explorer-360                 – Hub: hartë + listë + kategori + kërkim + featured
-/explorer-360/tour/$slug      – Viewer i një tour-i (Marzipano + hotspots + minimap + VR + audio + galeri + video)
-/explorer-360/showcase        – Showcase 3D (Sketchfab embed + rotate/zoom/fullscreen)
-/_authenticated/admin/tours   – Admin: upload panorama, lidh skena, hotspots, publiko
-/_authenticated/admin/showcase – Admin: upload modele 3D & produkte
+Skedari → Preview → [Skanim AI] → Raport → [Aprovo / Blur më shumë / Refuzo] → Upload
 ```
 
-### Hub (/explorer-360)
-- Hartë interaktive (**Leaflet + OpenStreetMap**) me marker për çdo tour.
-- Listë me karta (cover, titull, përshkrim, GPS, butona "Hapu në Google Maps" & "Fillo Tour-in").
-- Kërkim + chips për kategori (Histori, Natyrë, Biznes, Atraksion…).
-- Seksion "Featured" sipër.
-- Floating Action Button në kënd poshtë-djathtas: **Explore Options** → hap menu (desktop: popover me karta të animuara; mobile: bottom-sheet) me: Map, 360 Tour, VR, Atraksione, Biznese, Produkte, 3D, Rrugë, Evente, Kërko, AI Guide.
+- Pasi përdoruesi zgjedh panoramen, ajo dërgohet te një server function i ri që e thërret Gemini 2.5 Flash (vision) me prompt:
+  *"Identifiko të gjitha fytyrat e njerëzve, targat e makinave, dokumentet me të dhëna personale dhe ekranet me përmbajtje të lexueshme. Kthe një JSON me bounding box-e normalizuara (0–1) dhe llojin për secilën."*
+- Përgjigja e strukturuar përmes `Output.object` me Zod schema: `{ detections: [{ type: "face"|"plate"|"document"|"screen", x, y, w, h, confidence }] }`.
+- Në klient, mbi panoramen vizatohen kutitë e propozuara dhe aplikohet **gaussian blur** automatikisht në canvas mbi to.
+- Përdoruesi mund të: shtojë kuti me dorë, fshijë kuti false-positive, ndryshojë intensitetin e blur.
+- Vetëm panorama e re (me blur të aplikuar dhe rikoduar si JPEG) ngarkohet në storage — origjinali NUK ruhet.
+- Nëse AI gjen >0 detektime me confidence ≥0.7 dhe përdoruesi nuk ka aplikuar blur, butoni "Ngarko" bllokohet me mesazh paralajmërues.
 
-### Tour Viewer (/explorer-360/tour/$slug)
-- **Marzipano** për panoramë fullscreen (mbështet edhe Street View pano nga Google si fallback kur tour-i s'ka foto të vetën).
-- Hotspots: info, audio, video, foto, produkt – konfigurueshme nga admin.
-- Next / Previous scene + minimap me shigjetë drejtimi.
-- Buton VR Mode (WebXR; fallback stereo i thjeshtë).
-- Audio guide player + galeri thumbnail + video embed.
-- Gyroscope në mobile (DeviceOrientationEvent).
+### 2. Modul i ri "Publikim në Google Street View"
 
-### Showcase 3D (/explorer-360/showcase)
-- Faza 1: integrim me **Sketchfab embed** (model URL nga admin) – rotate, zoom, fullscreen out-of-the-box, mobile-friendly.
-- Kategori produkte + filter.
+Çdo tour fiton një tab të ri **"Street View"** me:
+- Listën e skenave të tour-it me statusin: `Pa ngarkuar` / `Në pritje` / `E publikuar në GSV` / `Refuzuar`.
+- Fushat e reja për skenë: `gsv_pano_id`, `gsv_url`, `gsv_upload_time`, `gsv_thumbnail`, `heading`, `floor`, `floor_name`.
+- Lidhjet (graph) mes panoramave: `gsv_connections` — Anchor/Target — që krijojnë navigim mes panoramave brenda Street View.
+- Butoni **"Publiko në Street View"** thërret një server route që përdor **Google Street View Publish API** me një llogari të vetme qendrore (OAuth refresh token i jotji i ruajtur si secret).
+- Butoni **"Sync from GSV"** merr metadatat nga Google dhe i ruan në DB.
+- Hartë e re mini-Google-Maps për çdo skenë me dragable marker + shigjetë headingu (si në screenshot-in tënd), me butonin "Save Location & Heading".
 
-### Admin
-- `/_authenticated/admin/tours`: krijoji/editoji tour, ngarko panorama (Supabase Storage), shto skena, lidhe me hotspots, vendos GPS, publish/draft.
-- `/_authenticated/admin/showcase`: krijoji produkte 3D me Sketchfab URL ose ngarko `.glb`, kategori, thumbnail.
-- Aksesi vetëm për rolin `admin` (përdorim tabelën ekzistuese `user_roles` + `has_role`).
+### 3. Roli dhe lejet
 
-### Database (migracion i ri)
-Tabela të reja, të gjitha me RLS + GRANTs:
-- `tours` (id, slug, title, description, cover_url, category, lat, lng, featured, published, created_by, created_at)
-- `tour_scenes` (id, tour_id, name, panorama_url, source: 'upload'|'streetview', street_view_pano_id, initial_yaw, initial_pitch, order)
-- `tour_hotspots` (id, scene_id, type: info|audio|video|image|product|link, yaw, pitch, title, body, media_url, target_scene_id)
-- `tour_media` (id, tour_id, type: gallery|audio|video, url, caption)
-- `showcase_products` (id, slug, title, description, category, sketchfab_url, model_url, thumbnail_url, published, created_at)
+- Çdo vizitor i regjistruar mund të krijojë tour-in e tij dhe ta dërgojë për publikim në GSV, por kërkesa kalon në një radhë `gsv_publish_queue` që e aprovon admin (që mos abuzohet llogaria qendrore).
+- Statuset: `draft → pending_review → approved → publishing → published / rejected`.
 
-RLS: publik `SELECT` për rreshtat `published=true`; admin (nëpërmjet `has_role`) bën të gjitha. Bucket-e të reja Storage: `tour-panoramas` (publik), `tour-media` (publik), `showcase-models` (publik).
+---
 
-### Si "modul" i izoluar
-- Gjithçka jeton nën `src/routes/explorer-360/*` dhe `src/components/explorer360/*`.
-- Asnjë import në komponentët ekzistues `vr/*`.
-- Mund të çaktivizohet duke fshirë butonin e ri nga top bar dhe foldrin – pjesa tjetër mbetet e paprekur.
+## Detaje teknike
 
-## 3) Çfarë do bëj në këtë rraund (deri sa të thuash "Vazhdo")
+### Tabela të reja / kolona të reja
 
-Hap pas hapi, "end-to-end" sa maksimum, por do ndaloj para se të kalojmë te admin & tabelat e mëdha që duan miratim:
+Migrim i ri që shton:
+- Te `tour_scenes`: `gsv_pano_id text`, `gsv_url text`, `gsv_upload_time timestamptz`, `gsv_thumbnail text`, `heading double precision default 0`, `floor int default 0`, `floor_name text`, `privacy_scan jsonb` (raporti i fundit i AI), `privacy_approved boolean default false`.
+- Tabelë e re `gsv_connections (id, from_scene_id, to_scene_id, gsv_anchor_pano, gsv_target_pano, created_at)` me RLS sipas pronësisë së tour-it.
+- Tabelë e re `gsv_publish_queue (id, scene_id, status, requested_by, reviewed_by, error, created_at, updated_at)`.
 
-1. **Fix CSS** në `public/explorer-new.html` (pika 1 më sipër).
-2. **Shtoj butonin** "🌐 360° Explorer" në top bar të `src/routes/index.tsx`.
-3. **Krijoj migracion** për 5 tabelat + 3 bucket-e + politika RLS + GRANTs (do të kërkoj miratim).
-4. **Faqja Hub** `/explorer-360` me: Leaflet hartë, listë kartash, kërkim, kategori, FAB "Explore Options" me bottom-sheet/popover.
-5. **Viewer** `/explorer-360/tour/$slug` me Marzipano + skena + hotspots bazikë (info/foto) + minimap + buton VR + audio.
-6. Instalim varësish: `marzipano`, `leaflet`, `react-leaflet`.
+### Server functions / routes të reja
+- `src/lib/privacy-scan.functions.ts` — `scanPanorama({ imageUrl })` → thërret Lovable AI Gateway (`google/gemini-2.5-pro` ose `gemini-3-flash-preview` vision) me `Output.object` schema, kthen detektimet.
+- `src/routes/api/gsv-publish.ts` — server route që pranon scene_id, merr panoramen e pastruar nga storage, e ngarkon në Street View Publish API me access token të rifreskuar nga refresh token-i qendror, pastaj ruan `gsv_pano_id` në DB.
+- `src/routes/api/gsv-sync.ts` — për sinkronizimin e metadatave.
+- `src/routes/api/gsv-connect.ts` — për krijimin e lidhjeve (BatchUpdate `connections`).
 
-Ndaloj këtu dhe pres komandën **"Vazhdo"**. Pastaj në raundin tjetër:
-7. Showcase 3D + integrimi Sketchfab.
-8. Admin panel për tours + showcase.
-9. Hotspots audio/video/produkt + galeri + WebXR i plotë + gyroscope + AI Guide.
+### Komponentë të rinj
+- `src/components/explorer360/PrivacyScanner.tsx` — kanvasi me overlay të kutive, kontrollet manual.
+- `src/components/explorer360/GsvPublishPanel.tsx` — tab-i i ri me listën e skenave dhe butonat.
+- `src/components/explorer360/SceneMapEditor.tsx` — Google Maps mini me marker + heading.
+- Te `explorer-360.admin.tsx`: integrim i `PrivacyScanner` para `uploadPanorama()` ekzistuese.
 
-## Shënime teknike
-- Marzipano + Leaflet janë libra të pavarur, pa varësi në Three.js – mbahen të lehta.
-- WebXR përdor `navigator.xr` me fallback në stereo split-screen (e kemi tashmë te `VRStereoView`).
-- Google Street View vazhdon të punojë me çelësin ekzistues `VITE_GOOGLE_MAPS_API_KEY`.
-- Asnjë skedar i mbrojtur (`client.ts`, `types.ts`, `.env`, `config.toml` projekt-level) nuk preket.
+### Secrets që duhen
+- `GOOGLE_STREETVIEW_OAUTH_CLIENT_ID`
+- `GOOGLE_STREETVIEW_OAUTH_CLIENT_SECRET`
+- `GOOGLE_STREETVIEW_REFRESH_TOKEN` (e llogarisë qendrore "Rrogozhina Guide")
+
+Këto do t'i kërkoj me `add_secret` pasi të aprovohet plani. Llogaria Google qendrore duhet:
+1. Të ketë Street View Publish API të aktivizuar në Google Cloud Console.
+2. Të bëjë OAuth një herë në një web flow lokal për të nxjerrë refresh token-in me scope `https://www.googleapis.com/auth/streetviewpublish`.
+
+### LOVABLE_API_KEY
+Tashmë ekziston në secrets — s'duhet shtuar.
+
+---
+
+## Rendi i punës (fazat)
+
+1. **Faza A** — Migrim DB (kolonat e reja + 2 tabelat e reja + RLS).
+2. **Faza B** — AI Privacy Scan: server function + `PrivacyScanner.tsx` + integrimi në admin upload flow.
+3. **Faza C** — UI për Street View tab + harta për-skenë me heading.
+4. **Faza D** — Pasi të jepen secrets-at e Google, server route për publikim + sync.
+5. **Faza E** — Radha e aprovimit nga admin.
+
+Pas planit dhe miratimit, fillimi me Fazën A + B (pjesa që nuk pret secrets-at e Google).
