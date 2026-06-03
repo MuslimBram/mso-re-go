@@ -140,10 +140,10 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    overflow: hidden;
+    overflow-y: auto;
   }
 
-  html, body, #root { height: 100%; }
+  html, body, #root { min-height: 100%; }
 }
 
 /* VR Explorer custom utilities */
