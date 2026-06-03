@@ -1,109 +1,174 @@
-# Faza D — Publikimi i pavarur nga Google Street View
+# Plan — 360° Explorer: Faza E (Viewer + Menu + VR + Hotspots + AI Guide)
 
-## Parimi kryesor
-Panorama jeton **gjithmonë** në aplikacionin tonë. Google Street View është vetëm një **kanal shpërndarjeje opsional**. Çdo dështim, refuzim ose fshirje në anën e Google nuk ndikon në panoramen tonë.
+Po e ndajmë në **5 sub-faza** të dorëzueshme veçmas. Pas çdo sub-faze ti teston dhe pastaj kalojmë te tjetra.
 
-```text
-[Krijuesi ngarkon panoramen]
-        │
-        ▼
-[Storage + DB lokale]  ◄──────── gjithmonë e disponueshme, e editueshme
-        │
-        ├── Publish lokalisht (default, automatik kur tour-i publikohet)
-        │
-        └── Publish në GSV (opsional, kanal i veçantë me status të vetin)
-                  │
-                  ├── pending_review → approved → publishing → published
-                  ├── failed  (mund të Republish-ohet)
-                  ├── rejected (nga admini ose Google)
-                  └── unpublished (hequr nga GSV, mbetet lokal)
+---
+
+## Sub-faza E1 — Viewer i avancuar (PRIORITET 1)
+
+Zgjeron `PanoramaViewer.tsx` ekzistues. Pa ndryshime DB.
+
+**Veçoritë e reja:**
+- **Compass** lart-djathtas që rrotullohet sipas yaw aktual (N/S/E/W me shenjën e veriut të vërtetë, llogaritet nga `initial_yaw` + heading aktual).
+- **Mini-map** poshtë-majtas: harta Google e vogël me pin-in e skenës aktuale + skena fqinje (klikohen për të kaluar).
+- **Fullscreen toggle** (Fullscreen API native).
+- **Favorites button** — ruan skenën te tabela ekzistuese `favorites` (pano_id = scene.id, lat/lng/heading).
+- **Share Location** — Web Share API + fallback "Copy link".
+- **Copy Google Maps Link** — `https://www.google.com/maps?q={lat},{lng}`.
+- **GPS Coordinates badge** — shfaq lat/lng me precizion 5 dhjetorë + buton kopjimi.
+- **Përmirësime UX**: tastet `F` (fullscreen), `S` (share), `M` (toggle minimap).
+
+---
+
+## Sub-faza E2 — Floating Menu (Desktop) / Bottom Sheet (Mobile)
+
+Komponent i ri `ExplorerMenu.tsx` — overlay mbi viewer dhe mbi hartën kryesore.
+
+**Veprimet (8 butona):**
+- Map → kalon te pamja `/explorer-360` (lista + harta).
+- 360° → hap viewer-in panoramik për skenën aktuale.
+- VR → aktivizon VR mode (sub-faza E3).
+- Favorites → drawer me skenat e ruajtura.
+- Attractions → drawer me atraksionet pranë (sub-faza E2b).
+- Businesses → drawer me bizneset pranë (sub-faza E2b).
+- Routes → drawer me itinerare (sub-faza E2b).
+- Search → input me autocomplete (skenat + Google Places).
+- AI Guide → hap panelin AI (sub-faza E5).
+
+**Layout:**
+- Desktop: floating panel djathtas, ikona vertikale, hapet me hover/click.
+- Mobile: bottom sheet (`Sheet` nga shadcn) që ngrihet nga poshtë.
+
+### Sub-faza E2b — të dhënat për Attractions/Businesses/Routes
+
+Strategjia hibrid (sipas zgjedhjes tënde):
+
+**Tabela të reja:**
+- `tour_pois` — atraksione & biznese të kuruara nga admini (override).
+  - kolona: `id`, `tour_id` ose `scene_id`, `type` (`attraction` | `business` | `religious`), `name`, `description`, `lat`, `lng`, `photo_url`, `external_url`, `phone`, `created_by`.
+- `tour_routes` — itinerare midis skenave.
+  - kolona: `id`, `tour_id`, `name`, `description`, `scene_order` (jsonb me array uuid-sh).
+
+**Automatik:**
+- Server-fn `getNearbyPois(lat, lng, type)` thërret Google Places (New) `searchNearby` përmes connector-it Google Maps ekzistues. Cache 24h në memorie.
+- Në UI: bashkohen rezultatet (override admin sipër + auto poshtë me badge "Google").
+
+---
+
+## Sub-faza E3 — Sphere / VR / WebXR
+
+Zgjeron `PanoramaViewer.tsx`. Kërkon paketa të reja: `three`, `@types/three`.
+
+**3 mode që ndërrohen me një toggle:**
+- **Panorama** (default, Marzipano siç është tani).
+- **Sphere** — three.js `SphereGeometry` me texture equirectangular dhe orbit controls.
+- **VR** — three.js + WebXR (`renderer.xr.enabled = true` + `VRButton`).
+  - Quest / Vision Pro: WebXR i plotë (immersive-vr).
+  - Telefon pa WebXR: fallback Cardboard split-screen (StereoEffect).
+- **Gyroscope** — `DeviceOrientationEvent` për rrotullim me kokë në mobile.
+
+**Note:** Marzipano nuk mbështet WebXR — prandaj three.js paralel për sphere/VR. Të dy renderuesit ndajnë të njëjtin URL panorame dhe heading.
+
+---
+
+## Sub-faza E4 — Hotspots të zgjeruar + Scene Navigation
+
+**Tipet e hotspot-eve** (extend `tour_hotspots.type`):
+- `info` (ekziston) — modal me tekst.
+- `audio` — luan audio file (i ngarkuar te `tour-media`).
+- `video` — luan video inline.
+- `image` — galeri foto.
+- `product` — kartë produkti (link + foto + çmim).
+- `external` — hap URL të jashtëm.
+- `business` — kartë biznesi (lidhet me `tour_pois`).
+
+**Skema:**
+- `tour_hotspots` ka tashmë `title`, `body`, `media_url`, `link_url`, `target_scene_id`. Mjafton.
+- Shtohet `metadata jsonb` për fusha të personalizuara (çmim, telefon, etj.).
+
+**Scene Navigation Hotspots (Next/Prev/Auto Align):**
+- Komponent `SceneNavArrows.tsx` — shigjeta floating mbi viewer.
+- **Next/Previous Scene** — sipas `order_index`.
+- **Distance** — llogaritet nga lat/lng me Haversine.
+- **Direction** — bearing midis dy skenave → shigjeta drejtohet drejt dest.
+- **Auto Align** — kur kalon në skenë të re, yaw fillestar përputhet me drejtimin nga skena e mëparshme (smooth transition).
+
+---
+
+## Sub-faza E5 — AI Guide per-scene
+
+**Skema:** shton në `tour_scenes`:
+- `ai_context text` — kontekst manual i admin-it (histori, info biznesi, info fetar).
+- `ai_topics text[]` — tag-e (`history`, `tourism`, `business`, `religious`) për të orientuar AI-në.
+
+**Flow sipas zgjedhjes sate:**
+1. Admin shkruan info-n bazë (opsionale) në panelin e skenës.
+2. Server-fn `enrichSceneAi(sceneId)` (createServerFn) bën:
+   - Merr `ai_context`, `name`, `lat`, `lng` nga skena.
+   - Bën `web_search` (Lovable AI tool calling me Gemini) për info shtesë nga interneti.
+   - Kthen tekst i sintetizuar + burime.
+3. Cache result në `tour_scenes.ai_cache jsonb` + `ai_cache_updated_at` (rifreskohet automatikisht çdo 7 ditë ose kur ndryshon `ai_context`).
+4. UI: panel AI Guide në viewer me streaming chat (`useChat` + `/api/chat`) ku përdoruesi mund të pyesë vazhdimisht, me kontekstin e skenës injektuar në system prompt.
+
+**AI Settings (drawer për përdoruesin):**
+- Gjuha (Shqip / English / Italiano).
+- Toni (Formal / Miqësor / Akademik).
+- Auto-play voice (Web Speech API TTS).
+- Vetëm tema specifike (history / business / religious).
+
+---
+
+## Detaje teknike (tabela & paketa të reja)
+
+**Migrime SQL:**
+```sql
+-- E2b
+CREATE TABLE public.tour_pois (...);
+GRANT ... + RLS;
+CREATE TABLE public.tour_routes (...);
+GRANT ... + RLS;
+
+-- E4
+ALTER TABLE public.tour_hotspots ADD COLUMN metadata jsonb;
+
+-- E5
+ALTER TABLE public.tour_scenes
+  ADD COLUMN ai_context text,
+  ADD COLUMN ai_topics text[] DEFAULT '{}',
+  ADD COLUMN ai_cache jsonb,
+  ADD COLUMN ai_cache_updated_at timestamptz;
 ```
 
-## Sjellja e re
+**Paketa npm:**
+- `three`, `@types/three` (sphere + WebXR)
 
-1. **Ngarkimi i panoramës** ruan gjithçka në `tour_scenes` + `tour-panoramas` bucket. Asgjë nuk varet nga Google.
-2. **Editimi** (riemërtim, lëvizje markeri, heading, blur shtesë, fshirje hotspot-esh) është gjithnjë i lejuar, edhe pas publikimit në GSV. Pas çdo editi që ndryshon pamjen, statusi GSV bie në `stale` dhe krijuesi mund të zgjedhë "Republish".
-3. **Publish lokal**: kontrollohet nga fusha `tours.published` + një flag i ri `tour_scenes.local_published` (default `true`) që lejon fshehjen e një skene të vetme nga aplikacioni pa fshirë të dhënat.
-4. **Publish në GSV**: krijues kërkon publikim → futet në `gsv_publish_queue` → admini aprovon → worker-i ngarkon → status final ruhet te skena.
-5. **Unpublish nga GSV**: thirrje `photo.delete` te Google; lokali mbetet i paprekur; `gsv_pano_id`, `gsv_url`, `gsv_upload_time` zerohen; statusi → `unpublished`.
-6. **Republish**: rikrijon kërkesë te radha, ri-aprovohet (ose auto-aprovohet nëse skena ka qenë publikuar më parë — vendoset me toggle adminit).
-7. **Failed/Rejected**: ruajmë mesazhin e gabimit dhe një `attempt_count`; butoni "Republish" e fut sërish në radhë.
-8. **Fshirja nga Google jashtë sistemit tonë**: një `gsv-sync` periodik kontrollon `photo.get`. Nëse Google kthen 404, statusi bie në `unpublished_remote` dhe panorama lokale **NUK** preket.
+**Connector-a:**
+- Google Maps Platform — ekziston, përdoret për Places (New) `searchNearby` (Attractions/Businesses) dhe MiniMap.
+- Lovable AI Gateway — ekziston (`LOVABLE_API_KEY`), përdoret për AI Guide + web search tool.
 
-## Skema e të dhënave (migrim i ri)
+**Skedarë të rinj kryesorë:**
+- `src/components/explorer360/viewer/CompassOverlay.tsx`
+- `src/components/explorer360/viewer/MiniMapOverlay.tsx`
+- `src/components/explorer360/viewer/GpsBadge.tsx`
+- `src/components/explorer360/viewer/SceneNavArrows.tsx`
+- `src/components/explorer360/ExplorerMenu.tsx` (+ DesktopFloating / MobileSheet)
+- `src/components/explorer360/panels/{Favorites,Attractions,Businesses,Routes,Search,AiGuidePanel}.tsx`
+- `src/components/explorer360/viewer/SphereViewer.tsx` (three.js)
+- `src/components/explorer360/viewer/VrViewer.tsx` (WebXR)
+- `src/components/explorer360/HotspotRenderer.tsx` (rendering polimorfik sipas tipit)
+- `src/lib/pois.functions.ts`, `src/lib/scene-ai.functions.ts`
+- `src/routes/api/chat.ts` (për AI Guide streaming)
 
-Te `tour_scenes` shtohen:
-- `local_published boolean not null default true` — kontrolli i shfaqjes lokale.
-- `gsv_status text not null default 'not_published'` — vlerat:
-  `not_published | pending_review | approved | publishing | published | failed | rejected | unpublished | unpublished_remote | stale`.
-- `gsv_last_error text` — mesazhi i fundit i dështimit.
-- `gsv_attempt_count int not null default 0`.
-- `gsv_last_synced_at timestamptz`.
-- `content_hash text` — hash i panoramës së pastruar; kur ndryshon → status `stale`.
+---
 
-Te `gsv_publish_queue` shtohen:
-- `action text not null default 'publish'` — `publish | unpublish | republish`.
-- `attempt_count int not null default 0`.
-- `last_error text`.
+## Radha e ekzekutimit (çfarë do bëj fillimisht)
 
-Të gjitha ndryshimet me GRANT-et përkatëse (`authenticated` + `service_role`) dhe RLS si më parë (krijuesi i tour-it + admin).
+Sipas prioritetit tënd:
 
-## Endpoint-et (TanStack)
+1. **E1 — Viewer i avancuar** *(pa DB, ndryshim vetëm i viewer-it; ~1 dorëzim)*
+2. **E2 + E2b — Menu + Drawer-ët + tabelat POI/Routes**
+3. **E3 — Sphere / WebXR**
+4. **E4 — Hotspots polimorfik + Scene Nav arrows**
+5. **E5 — AI Guide per-scene me web search**
 
-`createServerFn` për veprime nga UI (të mbrojtura me `requireSupabaseAuth`):
-- `requestGsvPublish({ sceneId })` — fut në radhë me `action='publish'`.
-- `requestGsvUnpublish({ sceneId })` — `action='unpublish'`.
-- `requestGsvRepublish({ sceneId })` — `action='republish'`.
-- `setLocalPublished({ sceneId, value })` — toggle lokal.
-- `adminApproveQueue({ queueId })`, `adminRejectQueue({ queueId, reason })` — vetëm admin (`has_role`).
-- `adminRunQueueItem({ queueId })` — admin force-run worker-it për një rresht.
-
-Server route për punët e gjata / të jashtme (`src/routes/api/public/`):
-- `gsv-worker.ts` — POST, kërkon header sekret `x-gsv-worker-token`; merr rreshtat `approved`, bën `photo.startUpload → photo.create / photo.delete` me access token të rifreskuar nga refresh token-i, përditëson skenën dhe radhën.
-- `gsv-sync.ts` — POST cron, kontrollon `photo.get` për të gjitha skenat `published`.
-- `gsv-oauth-callback.ts` — i përdorur **vetëm një herë** për të nxjerrë refresh token-in e llogarisë qendrore (nuk publikohet në UI).
-
-Worker thirret nga:
-- `adminApproveQueue` (fire-and-forget pas aprovimit), dhe
-- një cron `pg_cron` çdo 2 min që POST-on në `/api/public/gsv-worker` për retry të dështuara me `attempt_count < 5` (exponential backoff).
-
-## Sekretat që duhen
-- `GOOGLE_GSV_CLIENT_ID`
-- `GOOGLE_GSV_CLIENT_SECRET`
-- `GOOGLE_GSV_REFRESH_TOKEN` (nxirret pas një OAuth flow-i të vetëm përmes callback-ut)
-- `GSV_WORKER_TOKEN` (mbron `/api/public/gsv-worker` dhe `/api/public/gsv-sync` nga thirrjet publike)
-
-Do të kërkohen me `add_secret` pas miratimit të planit.
-
-## UI — `GsvPublishPanel` (zëvendëson versionin aktual)
-
-Për çdo skenë:
-- Badge statusi (jeshile `published`, blu `pending_review`, e verdhë `stale`/`failed`, gri `not_published`/`unpublished`, e kuqe `rejected`).
-- Meta: `gsv_pano_id`, link `gsv_url`, datë publikimi, attempt count, mesazhi i fundit i gabimit.
-- Butona kontekstualë:
-  - `not_published` → **Publish në GSV**, **Publish vetëm lokalisht** (toggle `local_published`).
-  - `pending_review` / `approved` / `publishing` → **Anulo kërkesën**.
-  - `published` → **Unpublish nga GSV**, **Republish (sinkronizo)**.
-  - `failed` / `rejected` / `unpublished_remote` → **Republish**, **Shih gabimin**.
-  - `stale` → **Republish me ndryshimet e reja**, **Mbaj versionin aktual në GSV**.
-- Toggle "Shfaqe në aplikacion" për `local_published`.
-- Butoni "Edito skenën" gjithmonë i hapur — hap editorin ekzistues (emër, hartë/heading, blur shtesë, hotspot-e).
-
-## Paneli i adminit (`/admin/gsv-queue`, route i ri i mbrojtur)
-
-Tab-et: **Pending review · Approved · Publishing · Published · Failed · Rejected · Unpublished**.
-Çdo rresht: miniaturë + emër skene, tour, krijues, statusi, attempts, gabim, kohë. Veprime: **Aprovo / Refuzo (me arsye) / Re-run worker / Force unpublish / Hap skenën**.
-
-## Rendi i implementimit pas miratimit
-1. Migrim DB (kolonat + radha e re).
-2. ServerFn-të për veprimet e UI (pa Google ende) + komponentët e rinj UI që funksionojnë me `not_published`/`pending_review`/`approved` (mock worker).
-3. Paneli i adminit me veprimet aprovim/refuzim.
-4. OAuth callback një-përdorimësh + ruajtja e refresh token-it si secret.
-5. Worker real (`/api/public/gsv-worker`) që flet me Street View Publish API.
-6. Sync periodik + cron retry.
-7. Dokument i shkurtër operacional (si rifreskohet refresh-token, si rinisë worker-i, si trajtohet 404 nga Google).
-
-## Garanca përfundimtare
-- Asnjë rrugë në kod nuk fshin objekte nga `tour-panoramas` bucket apo rreshtat e `tour_scenes` si pjesë e flow-it të GSV.
-- Çdo veprim drejt Google është **shtesë**, kurrë **zëvendësues**.
-- Edhe pa GSV fare, aplikacioni vazhdon të funksionojë identik me sot.
+Pas miratimit, fillojmë me **Sub-fazën E1**.
