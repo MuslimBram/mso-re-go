@@ -27,6 +27,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -57,6 +58,22 @@ function AuthPage() {
       toast.error((err as Error).message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgot = async () => {
+    if (!email) { toast.error("Shkruaj email-in më parë."); return; }
+    setResetting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Të dërguam një email për të rivendosur fjalëkalimin.");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -105,6 +122,17 @@ function AuthPage() {
             {loading ? "Duke pritur..." : mode === "signin" ? "Kyçu" : "Krijo llogari"}
           </Button>
         </form>
+
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={handleForgot}
+            disabled={resetting}
+            className="mt-3 w-full text-sm text-primary hover:underline disabled:opacity-50"
+          >
+            {resetting ? "Po dërgohet…" : "Harrova fjalëkalimin"}
+          </button>
+        )}
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
