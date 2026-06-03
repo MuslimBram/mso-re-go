@@ -11,6 +11,57 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
+async function uploadPanorama(file: File): Promise<string | null> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) { toast.error("Duhet të jesh i kyçur"); return null; }
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error: upErr } = await supabase.storage.from("tour-panoramas").upload(path, file, {
+    cacheControl: "31536000", upsert: false, contentType: file.type || "image/jpeg",
+  });
+  if (upErr) { toast.error(upErr.message); return null; }
+  // Long-lived signed URL (10 years) since bucket is private.
+  const { data: signed, error: sErr } = await supabase.storage.from("tour-panoramas").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+  if (sErr || !signed?.signedUrl) { toast.error(sErr?.message ?? "Sign URL failed"); return null; }
+  return signed.signedUrl;
+}
+
+function PanoramaField({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">Panorama (equirectangular .jpg)</Label>
+      <div className="flex gap-2">
+        <Input
+          defaultValue={value ?? ""}
+          key={value ?? ""}
+          placeholder="https://… ose ngarko skedar"
+          onBlur={(e) => { const v = e.target.value || null; if (v !== value) onChange(v); }}
+          className="flex-1"
+        />
+        <label className={`inline-flex items-center gap-1 px-3 rounded-md border cursor-pointer text-xs whitespace-nowrap ${busy ? "opacity-50 pointer-events-none" : "hover:bg-muted"}`}>
+          {busy ? "Po ngarkohet…" : "Ngarko"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setBusy(true);
+              const url = await uploadPanorama(f);
+              setBusy(false);
+              e.target.value = "";
+              if (url) { onChange(url); toast.success("Panorama u ngarkua"); }
+            }}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/explorer-360/admin")({
   component: AdminPage,
 });
@@ -290,7 +341,7 @@ function ToursAdmin() {
                       <Input defaultValue={s.name} onBlur={(e) => e.target.value !== s.name && updateScene(s.id, { name: e.target.value })} className="font-medium" />
                       <Button size="icon" variant="ghost" onClick={() => deleteScene(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
-                    <div><Label className="text-xs">Panorama URL (equirectangular .jpg)</Label><Input defaultValue={s.panorama_url ?? ""} placeholder="https://…" onBlur={(e) => updateScene(s.id, { panorama_url: e.target.value || null })} /></div>
+                    <PanoramaField value={s.panorama_url} onChange={(url) => updateScene(s.id, { panorama_url: url })} />
                     <div className="grid grid-cols-3 gap-2">
                       <div><Label className="text-xs">Yaw fillestar</Label><Input type="number" step="0.01" defaultValue={s.initial_yaw} onBlur={(e) => updateScene(s.id, { initial_yaw: Number(e.target.value) || 0 })} /></div>
                       <div><Label className="text-xs">Pitch</Label><Input type="number" step="0.01" defaultValue={s.initial_pitch} onBlur={(e) => updateScene(s.id, { initial_pitch: Number(e.target.value) || 0 })} /></div>
