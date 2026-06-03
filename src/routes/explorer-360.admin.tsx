@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass, Send } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
 import { SceneMapEditor } from "@/components/explorer360/SceneMapEditor";
