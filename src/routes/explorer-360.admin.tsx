@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
 
-async function uploadPanorama(file: File): Promise<string | null> {
+async function uploadPanorama(file: File | Blob, originalName = "panorama.jpg"): Promise<string | null> {
   const { data: u } = await supabase.auth.getUser();
   const uid = u.user?.id;
   if (!uid) { toast.error("Duhet të jesh i kyçur"); return null; }
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error: upErr } = await supabase.storage.from("tour-panoramas").upload(path, file, {
     cacheControl: "31536000", upsert: false, contentType: file.type || "image/jpeg",
@@ -29,6 +30,7 @@ async function uploadPanorama(file: File): Promise<string | null> {
 
 function PanoramaField({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
   const [busy, setBusy] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">Panorama (equirectangular .jpg)</Label>
@@ -41,23 +43,39 @@ function PanoramaField({ value, onChange }: { value: string | null; onChange: (u
           className="flex-1"
         />
         <label className={`inline-flex items-center gap-1 px-3 rounded-md border cursor-pointer text-xs whitespace-nowrap ${busy ? "opacity-50 pointer-events-none" : "hover:bg-muted"}`}>
-          {busy ? "Po ngarkohet…" : "Ngarko"}
+          {busy ? "Po ngarkohet…" : "Zgjidh & skano"}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
-            onChange={async (e) => {
+            onChange={(e) => {
               const f = e.target.files?.[0];
-              if (!f) return;
-              setBusy(true);
-              const url = await uploadPanorama(f);
-              setBusy(false);
               e.target.value = "";
-              if (url) { onChange(url); toast.success("Panorama u ngarkua"); }
+              if (!f) return;
+              setPendingFile(f);
             }}
           />
         </label>
       </div>
+      {pendingFile && (
+        <PrivacyScanner
+          file={pendingFile}
+          onCancel={() => setPendingFile(null)}
+          onApprove={async (blob, report) => {
+            setBusy(true);
+            const url = await uploadPanorama(blob, pendingFile.name);
+            setBusy(false);
+            setPendingFile(null);
+            if (url) {
+              onChange(url);
+              toast.success(`Panorama u ngarkua (${report.detections.length} zona blur)`);
+            }
+          }}
+        />
+      )}
+      <p className="text-[10px] text-muted-foreground">
+        🛡️ Çdo panoramë kalon nëpër AI që detekton fytyra & targa para se të ruhet.
+      </p>
     </div>
   );
 }
