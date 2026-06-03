@@ -341,7 +341,7 @@ function ToursAdmin() {
                       <Input defaultValue={s.name} onBlur={(e) => e.target.value !== s.name && updateScene(s.id, { name: e.target.value })} className="font-medium" />
                       <Button size="icon" variant="ghost" onClick={() => deleteScene(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
-                    <div><Label className="text-xs">Panorama URL (equirectangular .jpg)</Label><Input defaultValue={s.panorama_url ?? ""} placeholder="https://…" onBlur={(e) => updateScene(s.id, { panorama_url: e.target.value || null })} /></div>
+                    <PanoramaField value={s.panorama_url} onChange={(url) => updateScene(s.id, { panorama_url: url })} />
                     <div className="grid grid-cols-3 gap-2">
                       <div><Label className="text-xs">Yaw fillestar</Label><Input type="number" step="0.01" defaultValue={s.initial_yaw} onBlur={(e) => updateScene(s.id, { initial_yaw: Number(e.target.value) || 0 })} /></div>
                       <div><Label className="text-xs">Pitch</Label><Input type="number" step="0.01" defaultValue={s.initial_pitch} onBlur={(e) => updateScene(s.id, { initial_pitch: Number(e.target.value) || 0 })} /></div>
