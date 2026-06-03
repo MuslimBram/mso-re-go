@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
+import { SceneMapEditor } from "@/components/explorer360/SceneMapEditor";
+import { GsvPublishPanel } from "@/components/explorer360/GsvPublishPanel";
 
 async function uploadPanorama(file: File | Blob, originalName = "panorama.jpg"): Promise<string | null> {
   const { data: u } = await supabase.auth.getUser();
@@ -106,6 +108,11 @@ interface Scene {
   initial_pitch: number;
   initial_fov: number;
   order_index: number;
+  street_view_lat: number | null;
+  street_view_lng: number | null;
+  heading: number;
+  privacy_approved: boolean;
+  gsv_pano_id: string | null;
 }
 interface Hotspot {
   id: string;
@@ -366,6 +373,23 @@ function ToursAdmin() {
                       <div><Label className="text-xs">FOV</Label><Input type="number" step="1" defaultValue={s.initial_fov} onBlur={(e) => updateScene(s.id, { initial_fov: Number(e.target.value) || 90 })} /></div>
                     </div>
 
+                    <details className="rounded border bg-muted/30">
+                      <summary className="cursor-pointer select-none px-2 py-1.5 text-xs font-semibold flex items-center gap-1">
+                        <Compass className="h-3.5 w-3.5" /> Vendndodhja & Veriu (për Google Street View)
+                      </summary>
+                      <div className="p-2">
+                        <SceneMapEditor
+                          lat={s.street_view_lat}
+                          lng={s.street_view_lng}
+                          heading={s.heading}
+                          defaultCenter={selected.lat != null && selected.lng != null ? { lat: selected.lat, lng: selected.lng } : undefined}
+                          onSave={async ({ lat, lng, heading }) => {
+                            await updateScene(s.id, { street_view_lat: lat, street_view_lng: lng, heading });
+                          }}
+                        />
+                      </div>
+                    </details>
+
                     <div className="pl-3 border-l-2 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-muted-foreground">Hotspots</span>
@@ -404,6 +428,10 @@ function ToursAdmin() {
                 ))}
                 {scenes.length === 0 && <div className="text-sm text-muted-foreground text-center py-6">Asnjë skenë ende.</div>}
               </div>
+            </section>
+
+            <section className="rounded-lg border p-3 bg-muted/20">
+              <GsvPublishPanel tourId={selected.id} />
             </section>
 
             <div className="text-xs text-muted-foreground flex items-center gap-1"><Save className="h-3 w-3" /> Ndryshimet ruhen automatikisht kur dilni nga fusha.</div>
