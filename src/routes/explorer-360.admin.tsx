@@ -101,17 +101,8 @@ function AdminPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
         <Settings className="h-12 w-12 text-muted-foreground" />
         <h1 className="text-2xl font-bold">Duhet të kyçesh</h1>
-        <Link to="/auth"><Button>Kyçu</Button></Link>
-      </div>
-    );
-  }
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
-        <Settings className="h-12 w-12 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Vetëm për administratorë</h1>
-        <p className="text-sm text-muted-foreground max-w-md">Llogaria juaj nuk ka rolin <code>admin</code>. Kërkoji administratorit të ju shtojë rolin në tabelën <code>user_roles</code>.</p>
-        <Link to="/explorer-360"><Button variant="outline">Kthehu</Button></Link>
+        <p className="text-sm text-muted-foreground max-w-md">Krijo një llogari falas për të shtuar tour-et e tua 360° dhe për të ruajtur favoritet & historikun.</p>
+        <Link to="/auth"><Button>Kyçu / Regjistrohu</Button></Link>
       </div>
     );
   }
@@ -125,7 +116,7 @@ function AdminPage() {
             <ArrowLeft className="h-4 w-4" /> 360° Explorer
           </Link>
           <div className="flex items-center gap-2 font-bold">
-            <Settings className="h-5 w-5 text-primary" /> Admin
+            <Settings className="h-5 w-5 text-primary" /> {isAdmin ? "Admin" : "Tour-et e mia"}
           </div>
           <div className="w-20" />
         </div>
@@ -135,10 +126,10 @@ function AdminPage() {
         <Tabs defaultValue="tours">
           <TabsList>
             <TabsTrigger value="tours"><Globe2 className="h-4 w-4 mr-1.5" /> Tour-e 360°</TabsTrigger>
-            <TabsTrigger value="showcase"><Box className="h-4 w-4 mr-1.5" /> Showcase 3D</TabsTrigger>
+            {isAdmin && <TabsTrigger value="showcase"><Box className="h-4 w-4 mr-1.5" /> Showcase 3D</TabsTrigger>}
           </TabsList>
           <TabsContent value="tours" className="mt-4"><ToursAdmin /></TabsContent>
-          <TabsContent value="showcase" className="mt-4"><ShowcaseAdmin /></TabsContent>
+          {isAdmin && <TabsContent value="showcase" className="mt-4"><ShowcaseAdmin /></TabsContent>}
         </Tabs>
       </div>
     </div>

@@ -1,5 +1,8 @@
 const STORAGE_KEY = "vr-explorer:gmaps-key";
-const PUBLIC_FALLBACK_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || null;
+// Default project key (domain-restricted in Google Cloud Console).
+const DEFAULT_KEY = "AIzaSyAKrIBAzrS8ZdWLVG7NeBNItrFc_AoEkmI";
+const PUBLIC_FALLBACK_KEY =
+  import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || DEFAULT_KEY;
 
 export function getGoogleMapsKey(): string | null {
   if (typeof window === "undefined") return PUBLIC_FALLBACK_KEY;
