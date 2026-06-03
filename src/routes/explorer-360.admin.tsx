@@ -430,6 +430,10 @@ function ToursAdmin() {
               </div>
             </section>
 
+            <section className="rounded-lg border p-3 bg-muted/20">
+              <GsvPublishPanel tourId={selected.id} />
+            </section>
+
             <div className="text-xs text-muted-foreground flex items-center gap-1"><Save className="h-3 w-3" /> Ndryshimet ruhen automatikisht kur dilni nga fusha.</div>
           </div>
         )}
