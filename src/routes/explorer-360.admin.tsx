@@ -373,6 +373,23 @@ function ToursAdmin() {
                       <div><Label className="text-xs">FOV</Label><Input type="number" step="1" defaultValue={s.initial_fov} onBlur={(e) => updateScene(s.id, { initial_fov: Number(e.target.value) || 90 })} /></div>
                     </div>
 
+                    <details className="rounded border bg-muted/30">
+                      <summary className="cursor-pointer select-none px-2 py-1.5 text-xs font-semibold flex items-center gap-1">
+                        <Compass className="h-3.5 w-3.5" /> Vendndodhja & Veriu (për Google Street View)
+                      </summary>
+                      <div className="p-2">
+                        <SceneMapEditor
+                          lat={s.street_view_lat}
+                          lng={s.street_view_lng}
+                          heading={s.heading}
+                          defaultCenter={selected.lat != null && selected.lng != null ? { lat: selected.lat, lng: selected.lng } : undefined}
+                          onSave={async ({ lat, lng, heading }) => {
+                            await updateScene(s.id, { street_view_lat: lat, street_view_lng: lng, heading });
+                          }}
+                        />
+                      </div>
+                    </details>
+
                     <div className="pl-3 border-l-2 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-muted-foreground">Hotspots</span>
