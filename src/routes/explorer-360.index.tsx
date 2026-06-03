@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Globe2, MapPin, Search, ArrowLeft, Sparkles, Box } from "lucide-react";
+import { Globe2, MapPin, Search, ArrowLeft, Sparkles, Box, Plus } from "lucide-react";
 import { ToursMap, type TourPin } from "@/components/explorer360/ToursMap";
 import { ExploreFab } from "@/components/explorer360/ExploreFab";
 import { AiGuide } from "@/components/explorer360/AiGuide";
@@ -96,6 +96,14 @@ function ExplorerHub() {
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-3">Eksploro botën në 360°</h1>
           <p className="text-muted-foreground">Panorama immersive, hotspots, VR mode dhe showcase 3D.</p>
+          <div className="mt-5 flex flex-wrap gap-2 justify-center">
+            <Link to="/explorer-360/admin">
+              <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Shto tour-in tënd 360°</Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm" variant="outline">Kyçu për favoritet & historikun</Button>
+            </Link>
+          </div>
         </div>
 
         {/* Featured */}
