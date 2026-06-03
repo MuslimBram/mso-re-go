@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass, Send } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
+import { SceneMapEditor } from "@/components/explorer360/SceneMapEditor";
+import { GsvPublishPanel } from "@/components/explorer360/GsvPublishPanel";
 
 async function uploadPanorama(file: File | Blob, originalName = "panorama.jpg"): Promise<string | null> {
   const { data: u } = await supabase.auth.getUser();
@@ -118,6 +120,13 @@ interface Hotspot {
   media_url: string | null;
   link_url: string | null;
   target_scene_id: string | null;
+}
+interface SceneExt {
+  street_view_lat: number | null;
+  street_view_lng: number | null;
+  heading: number;
+  privacy_approved: boolean;
+  gsv_pano_id: string | null;
 }
 interface Product {
   id: string;
