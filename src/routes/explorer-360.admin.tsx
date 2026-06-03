@@ -108,6 +108,11 @@ interface Scene {
   initial_pitch: number;
   initial_fov: number;
   order_index: number;
+  street_view_lat: number | null;
+  street_view_lng: number | null;
+  heading: number;
+  privacy_approved: boolean;
+  gsv_pano_id: string | null;
 }
 interface Hotspot {
   id: string;
