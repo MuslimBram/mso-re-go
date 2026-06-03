@@ -194,7 +194,11 @@ function AdminPage() {
           <div className="flex items-center gap-2 font-bold">
             <Settings className="h-5 w-5 text-primary" /> {isAdmin ? "Admin" : "Tour-et e mia"}
           </div>
-          <div className="w-20" />
+          <div className="w-20 flex justify-end">
+            {isAdmin && (
+              <Link to="/admin/gsv-queue"><Button size="sm" variant="outline"><Globe2 className="h-4 w-4 mr-1" /> Radha GSV</Button></Link>
+            )}
+          </div>
         </div>
       </header>
 
