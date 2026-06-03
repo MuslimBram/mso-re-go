@@ -1,11 +1,15 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronLeft, ChevronRight, Glasses, MapPin, Volume2, X, Globe2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Glasses, Volume2, X, Globe2 } from "lucide-react";
 import { PanoramaViewer, type SceneData } from "@/components/explorer360/PanoramaViewer";
 import { ExploreFab } from "@/components/explorer360/ExploreFab";
 import { AiGuide } from "@/components/explorer360/AiGuide";
+import { CompassOverlay } from "@/components/explorer360/viewer/CompassOverlay";
+import { MiniMapOverlay } from "@/components/explorer360/viewer/MiniMapOverlay";
+import { GpsBadge } from "@/components/explorer360/viewer/GpsBadge";
+import { ViewerControls } from "@/components/explorer360/viewer/ViewerControls";
 
 export const Route = createFileRoute("/explorer-360/tour/$slug")({
   component: TourPage,
@@ -55,6 +59,8 @@ function TourPage() {
   const [activeHotspot, setActiveHotspot] = useState<Hotspot | null>(null);
   const [vrMode, setVrMode] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [view, setView] = useState({ yaw: 0, pitch: 0, fov: Math.PI / 2 });
+  const [miniMapVisible, setMiniMapVisible] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -87,6 +93,27 @@ function TourPage() {
   }, [slug]);
 
   const currentScene = scenes[currentIdx];
+
+  // Reset view tracker when scene changes
+  useEffect(() => {
+    if (currentScene) {
+      setView({ yaw: currentScene.initial_yaw, pitch: currentScene.initial_pitch, fov: (currentScene.initial_fov * Math.PI) / 180 });
+    }
+  }, [currentScene?.id]);
+
+  // M key toggles minimap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "m" || e.key === "M") setMiniMapVisible((v) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleViewChange = useCallback((v: { yaw: number; pitch: number; fov: number }) => {
+    setView(v);
+  }, []);
 
   const sceneData: SceneData | null = useMemo(() => {
     if (!currentScene) return null;
@@ -167,7 +194,7 @@ function TourPage() {
       {/* Viewer */}
       <div className="relative h-screen w-screen">
         {sceneData ? (
-          <PanoramaViewer scene={sceneData} onHotspot={handleHotspot} />
+          <PanoramaViewer scene={sceneData} onHotspot={handleHotspot} onViewChange={handleViewChange} />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
@@ -202,16 +229,50 @@ function TourPage() {
         </div>
       )}
 
-      {/* Minimap (GPS) */}
-      {tour.lat != null && tour.lng != null && (
-        <a
-          href={`https://www.google.com/maps?q=${tour.lat},${tour.lng}`}
-          target="_blank"
-          rel="noreferrer"
-          className="fixed bottom-6 left-6 z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-xs hover:bg-white/20"
-        >
-          <MapPin className="h-3.5 w-3.5" /> Hap në Maps
-        </a>
+      {/* Advanced viewer overlays (E1) */}
+      {sceneData && currentScene && (
+        <>
+          <CompassOverlay yaw={view.yaw} northOffsetDeg={0} />
+          {(currentScene.street_view_lat ?? tour.lat) != null &&
+            (currentScene.street_view_lng ?? tour.lng) != null && (
+              <GpsBadge
+                lat={(currentScene.street_view_lat ?? tour.lat) as number}
+                lng={(currentScene.street_view_lng ?? tour.lng) as number}
+              />
+            )}
+          <ViewerControls
+            sceneId={currentScene.id}
+            sceneName={currentScene.name}
+            lat={currentScene.street_view_lat ?? tour.lat}
+            lng={currentScene.street_view_lng ?? tour.lng}
+            thumbnailUrl={currentScene.panorama_url}
+            currentYaw={view.yaw}
+            currentPitch={view.pitch}
+          />
+          {miniMapVisible &&
+            (currentScene.street_view_lat ?? tour.lat) != null &&
+            (currentScene.street_view_lng ?? tour.lng) != null && (
+              <MiniMapOverlay
+                current={{
+                  lat: (currentScene.street_view_lat ?? tour.lat) as number,
+                  lng: (currentScene.street_view_lng ?? tour.lng) as number,
+                  name: currentScene.name,
+                }}
+                neighbors={scenes
+                  .filter((s) => s.id !== currentScene.id && s.street_view_lat != null && s.street_view_lng != null)
+                  .map((s) => ({
+                    id: s.id,
+                    name: s.name,
+                    lat: s.street_view_lat as number,
+                    lng: s.street_view_lng as number,
+                  }))}
+                onSelectScene={(id) => {
+                  const idx = scenes.findIndex((s) => s.id === id);
+                  if (idx >= 0) setCurrentIdx(idx);
+                }}
+              />
+            )}
+        </>
       )}
 
       {/* Hotspot dialog */}
