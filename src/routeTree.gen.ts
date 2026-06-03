@@ -16,7 +16,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as Explorer360IndexRouteImport } from './routes/explorer-360.index'
 import { Route as Explorer360ShowcaseRouteImport } from './routes/explorer-360.showcase'
 import { Route as Explorer360AdminRouteImport } from './routes/explorer-360.admin'
+import { Route as AdminGsvQueueRouteImport } from './routes/admin.gsv-queue'
 import { Route as Explorer360TourSlugRouteImport } from './routes/explorer-360.tour.$slug'
+import { Route as ApiPublicGsvWorkerRouteImport } from './routes/api/public/gsv-worker'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -53,9 +55,19 @@ const Explorer360AdminRoute = Explorer360AdminRouteImport.update({
   path: '/explorer-360/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGsvQueueRoute = AdminGsvQueueRouteImport.update({
+  id: '/admin/gsv-queue',
+  path: '/admin/gsv-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Explorer360TourSlugRoute = Explorer360TourSlugRouteImport.update({
   id: '/explorer-360/tour/$slug',
   path: '/explorer-360/tour/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGsvWorkerRoute = ApiPublicGsvWorkerRouteImport.update({
+  id: '/api/public/gsv-worker',
+  path: '/api/public/gsv-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -64,9 +76,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
+  '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +88,11 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360': typeof Explorer360IndexRoute
+  '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
 export interface FileRoutesById {
@@ -85,9 +101,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
+  '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +115,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
+    | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +127,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360'
+    | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   id:
     | '__root__'
@@ -117,9 +139,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
+    | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -128,9 +152,11 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AdminGsvQueueRoute: typeof AdminGsvQueueRoute
   Explorer360AdminRoute: typeof Explorer360AdminRoute
   Explorer360ShowcaseRoute: typeof Explorer360ShowcaseRoute
   Explorer360IndexRoute: typeof Explorer360IndexRoute
+  ApiPublicGsvWorkerRoute: typeof ApiPublicGsvWorkerRoute
   Explorer360TourSlugRoute: typeof Explorer360TourSlugRoute
 }
 
@@ -185,11 +211,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Explorer360AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/gsv-queue': {
+      id: '/admin/gsv-queue'
+      path: '/admin/gsv-queue'
+      fullPath: '/admin/gsv-queue'
+      preLoaderRoute: typeof AdminGsvQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer-360/tour/$slug': {
       id: '/explorer-360/tour/$slug'
       path: '/explorer-360/tour/$slug'
       fullPath: '/explorer-360/tour/$slug'
       preLoaderRoute: typeof Explorer360TourSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/gsv-worker': {
+      id: '/api/public/gsv-worker'
+      path: '/api/public/gsv-worker'
+      fullPath: '/api/public/gsv-worker'
+      preLoaderRoute: typeof ApiPublicGsvWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -200,9 +240,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AdminGsvQueueRoute: AdminGsvQueueRoute,
   Explorer360AdminRoute: Explorer360AdminRoute,
   Explorer360ShowcaseRoute: Explorer360ShowcaseRoute,
   Explorer360IndexRoute: Explorer360IndexRoute,
+  ApiPublicGsvWorkerRoute: ApiPublicGsvWorkerRoute,
   Explorer360TourSlugRoute: Explorer360TourSlugRoute,
 }
 export const routeTree = rootRouteImport

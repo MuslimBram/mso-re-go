@@ -97,9 +97,12 @@ export type Database = {
       }
       gsv_publish_queue: {
         Row: {
+          action: string
+          attempt_count: number
           created_at: string
           error: string | null
           id: string
+          last_error: string | null
           requested_by: string | null
           reviewed_by: string | null
           scene_id: string
@@ -107,9 +110,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          action?: string
+          attempt_count?: number
           created_at?: string
           error?: string | null
           id?: string
+          last_error?: string | null
           requested_by?: string | null
           reviewed_by?: string | null
           scene_id: string
@@ -117,9 +123,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          action?: string
+          attempt_count?: number
           created_at?: string
           error?: string | null
           id?: string
+          last_error?: string | null
           requested_by?: string | null
           reviewed_by?: string | null
           scene_id?: string
@@ -347,10 +356,15 @@ export type Database = {
       }
       tour_scenes: {
         Row: {
+          content_hash: string | null
           created_at: string
           floor: number
           floor_name: string | null
+          gsv_attempt_count: number
+          gsv_last_error: string | null
+          gsv_last_synced_at: string | null
           gsv_pano_id: string | null
+          gsv_status: string
           gsv_thumbnail: string | null
           gsv_upload_time: string | null
           gsv_url: string | null
@@ -359,6 +373,7 @@ export type Database = {
           initial_fov: number
           initial_pitch: number
           initial_yaw: number
+          local_published: boolean
           name: string
           order_index: number
           panorama_url: string | null
@@ -371,10 +386,15 @@ export type Database = {
           tour_id: string
         }
         Insert: {
+          content_hash?: string | null
           created_at?: string
           floor?: number
           floor_name?: string | null
+          gsv_attempt_count?: number
+          gsv_last_error?: string | null
+          gsv_last_synced_at?: string | null
           gsv_pano_id?: string | null
+          gsv_status?: string
           gsv_thumbnail?: string | null
           gsv_upload_time?: string | null
           gsv_url?: string | null
@@ -383,6 +403,7 @@ export type Database = {
           initial_fov?: number
           initial_pitch?: number
           initial_yaw?: number
+          local_published?: boolean
           name: string
           order_index?: number
           panorama_url?: string | null
@@ -395,10 +416,15 @@ export type Database = {
           tour_id: string
         }
         Update: {
+          content_hash?: string | null
           created_at?: string
           floor?: number
           floor_name?: string | null
+          gsv_attempt_count?: number
+          gsv_last_error?: string | null
+          gsv_last_synced_at?: string | null
           gsv_pano_id?: string | null
+          gsv_status?: string
           gsv_thumbnail?: string | null
           gsv_upload_time?: string | null
           gsv_url?: string | null
@@ -407,6 +433,7 @@ export type Database = {
           initial_fov?: number
           initial_pitch?: number
           initial_yaw?: number
+          local_published?: boolean
           name?: string
           order_index?: number
           panorama_url?: string | null
