@@ -23,9 +23,10 @@ export interface SceneData {
 interface Props {
   scene: SceneData;
   onHotspot?: (hotspotId: string) => void;
+  onViewChange?: (view: { yaw: number; pitch: number; fov: number }) => void;
 }
 
-export function PanoramaViewer({ scene, onHotspot }: Props) {
+export function PanoramaViewer({ scene, onHotspot, onViewChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
 
@@ -65,11 +66,30 @@ export function PanoramaViewer({ scene, onHotspot }: Props) {
 
     sceneObj.switchTo();
 
+    // Notify view changes (yaw/pitch/fov) for overlays like compass
+    let rafId: number | null = null;
+    const emit = () => {
+      if (!onViewChange) return;
+      const params = view.parameters();
+      onViewChange({ yaw: params.yaw, pitch: params.pitch, fov: params.fov });
+    };
+    const onChange = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        emit();
+      });
+    };
+    view.addEventListener("change", onChange);
+    emit();
+
     return () => {
+      view.removeEventListener("change", onChange);
+      if (rafId != null) cancelAnimationFrame(rafId);
       viewer.destroy();
       viewerRef.current = null;
     };
-  }, [scene, onHotspot]);
+  }, [scene, onHotspot, onViewChange]);
 
   return <div ref={containerRef} className="absolute inset-0 bg-black" />;
 }
