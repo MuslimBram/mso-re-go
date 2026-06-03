@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as Explorer360IndexRouteImport } from './routes/explorer-360.index'
 import { Route as Explorer360ShowcaseRouteImport } from './routes/explorer-360.showcase'
 import { Route as Explorer360AdminRouteImport } from './routes/explorer-360.admin'
+import { Route as AdminGsvQueueRouteImport } from './routes/admin.gsv-queue'
 import { Route as Explorer360TourSlugRouteImport } from './routes/explorer-360.tour.$slug'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -53,6 +54,11 @@ const Explorer360AdminRoute = Explorer360AdminRouteImport.update({
   path: '/explorer-360/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGsvQueueRoute = AdminGsvQueueRouteImport.update({
+  id: '/admin/gsv-queue',
+  path: '/admin/gsv-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Explorer360TourSlugRoute = Explorer360TourSlugRouteImport.update({
   id: '/explorer-360/tour/$slug',
   path: '/explorer-360/tour/$slug',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360': typeof Explorer360IndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/gsv-queue': typeof AdminGsvQueueRoute
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin/gsv-queue'
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AdminGsvQueueRoute: typeof AdminGsvQueueRoute
   Explorer360AdminRoute: typeof Explorer360AdminRoute
   Explorer360ShowcaseRoute: typeof Explorer360ShowcaseRoute
   Explorer360IndexRoute: typeof Explorer360IndexRoute
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Explorer360AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/gsv-queue': {
+      id: '/admin/gsv-queue'
+      path: '/admin/gsv-queue'
+      fullPath: '/admin/gsv-queue'
+      preLoaderRoute: typeof AdminGsvQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer-360/tour/$slug': {
       id: '/explorer-360/tour/$slug'
       path: '/explorer-360/tour/$slug'
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AdminGsvQueueRoute: AdminGsvQueueRoute,
   Explorer360AdminRoute: Explorer360AdminRoute,
   Explorer360ShowcaseRoute: Explorer360ShowcaseRoute,
   Explorer360IndexRoute: Explorer360IndexRoute,
@@ -208,3 +229,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
