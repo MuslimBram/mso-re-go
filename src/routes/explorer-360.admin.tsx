@@ -121,13 +121,6 @@ interface Hotspot {
   link_url: string | null;
   target_scene_id: string | null;
 }
-interface SceneExt {
-  street_view_lat: number | null;
-  street_view_lng: number | null;
-  heading: number;
-  privacy_approved: boolean;
-  gsv_pano_id: string | null;
-}
 interface Product {
   id: string;
   slug: string;
