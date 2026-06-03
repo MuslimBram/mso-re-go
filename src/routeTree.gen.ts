@@ -19,6 +19,7 @@ import { Route as Explorer360AdminRouteImport } from './routes/explorer-360.admi
 import { Route as AdminGsvQueueRouteImport } from './routes/admin.gsv-queue'
 import { Route as Explorer360TourSlugRouteImport } from './routes/explorer-360.tour.$slug'
 import { Route as ApiPublicGsvWorkerRouteImport } from './routes/api/public/gsv-worker'
+import { Route as ApiPublicGsvOauthCallbackRouteImport } from './routes/api/public/gsv-oauth-callback'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -70,6 +71,12 @@ const ApiPublicGsvWorkerRoute = ApiPublicGsvWorkerRouteImport.update({
   path: '/api/public/gsv-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGsvOauthCallbackRoute =
+  ApiPublicGsvOauthCallbackRouteImport.update({
+    id: '/api/public/gsv-oauth-callback',
+    path: '/api/public/gsv-oauth-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
+  '/api/public/gsv-oauth-callback': typeof ApiPublicGsvOauthCallbackRoute
   '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360': typeof Explorer360IndexRoute
+  '/api/public/gsv-oauth-callback': typeof ApiPublicGsvOauthCallbackRoute
   '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/explorer-360/admin': typeof Explorer360AdminRoute
   '/explorer-360/showcase': typeof Explorer360ShowcaseRoute
   '/explorer-360/': typeof Explorer360IndexRoute
+  '/api/public/gsv-oauth-callback': typeof ApiPublicGsvOauthCallbackRoute
   '/api/public/gsv-worker': typeof ApiPublicGsvWorkerRoute
   '/explorer-360/tour/$slug': typeof Explorer360TourSlugRoute
 }
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
+    | '/api/public/gsv-oauth-callback'
     | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360'
+    | '/api/public/gsv-oauth-callback'
     | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   id:
@@ -143,6 +155,7 @@ export interface FileRouteTypes {
     | '/explorer-360/admin'
     | '/explorer-360/showcase'
     | '/explorer-360/'
+    | '/api/public/gsv-oauth-callback'
     | '/api/public/gsv-worker'
     | '/explorer-360/tour/$slug'
   fileRoutesById: FileRoutesById
@@ -156,6 +169,7 @@ export interface RootRouteChildren {
   Explorer360AdminRoute: typeof Explorer360AdminRoute
   Explorer360ShowcaseRoute: typeof Explorer360ShowcaseRoute
   Explorer360IndexRoute: typeof Explorer360IndexRoute
+  ApiPublicGsvOauthCallbackRoute: typeof ApiPublicGsvOauthCallbackRoute
   ApiPublicGsvWorkerRoute: typeof ApiPublicGsvWorkerRoute
   Explorer360TourSlugRoute: typeof Explorer360TourSlugRoute
 }
@@ -232,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGsvWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/gsv-oauth-callback': {
+      id: '/api/public/gsv-oauth-callback'
+      path: '/api/public/gsv-oauth-callback'
+      fullPath: '/api/public/gsv-oauth-callback'
+      preLoaderRoute: typeof ApiPublicGsvOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -244,18 +265,10 @@ const rootRouteChildren: RootRouteChildren = {
   Explorer360AdminRoute: Explorer360AdminRoute,
   Explorer360ShowcaseRoute: Explorer360ShowcaseRoute,
   Explorer360IndexRoute: Explorer360IndexRoute,
+  ApiPublicGsvOauthCallbackRoute: ApiPublicGsvOauthCallbackRoute,
   ApiPublicGsvWorkerRoute: ApiPublicGsvWorkerRoute,
   Explorer360TourSlugRoute: Explorer360TourSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

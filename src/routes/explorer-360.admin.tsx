@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass, Link2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
 import { SceneMapEditor } from "@/components/explorer360/SceneMapEditor";
@@ -194,9 +194,14 @@ function AdminPage() {
           <div className="flex items-center gap-2 font-bold">
             <Settings className="h-5 w-5 text-primary" /> {isAdmin ? "Admin" : "Tour-et e mia"}
           </div>
-          <div className="w-20 flex justify-end">
+          <div className="flex justify-end gap-2">
             {isAdmin && (
-              <Link to="/admin/gsv-queue"><Button size="sm" variant="outline"><Globe2 className="h-4 w-4 mr-1" /> Radha GSV</Button></Link>
+              <>
+                <a href="/api/public/gsv-oauth-callback" target="_blank" rel="noreferrer">
+                  <Button size="sm" variant="outline"><Link2 className="h-4 w-4 mr-1" /> Connect GSV</Button>
+                </a>
+                <Link to="/admin/gsv-queue"><Button size="sm" variant="outline"><Globe2 className="h-4 w-4 mr-1" /> Radha GSV</Button></Link>
+              </>
             )}
           </div>
         </div>
