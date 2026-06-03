@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ interface QueueRow {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { v: string; icon: JSX.Element; label: string }> = {
+  const map: Record<string, { v: string; icon: ReactNode; label: string }> = {
     published: { v: "default", icon: <CheckCircle2 className="h-3 w-3 mr-1" />, label: "E publikuar" },
     approved: { v: "secondary", icon: <Clock className="h-3 w-3 mr-1" />, label: "E aprovuar" },
     publishing: { v: "secondary", icon: <Loader2 className="h-3 w-3 mr-1 animate-spin" />, label: "Po publikohet" },
