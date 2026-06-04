@@ -35,7 +35,7 @@ type ScanReport = { detections: unknown[]; blurRadius: number; manualCount: numb
 interface PanoramaFieldPatch {
   panorama_url?: string | null;
   privacy_approved?: boolean;
-  privacy_scan?: { detections: unknown[]; blur_radius: number; manual_count: number; scanned_at: string; version: number } | null;
+  privacy_scan?: Json | null;
 }
 function PanoramaField({ value, onPatch }: { value: string | null; onPatch: (patch: PanoramaFieldPatch) => void }) {
   const [busy, setBusy] = useState(false);
