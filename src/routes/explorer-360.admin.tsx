@@ -128,6 +128,7 @@ interface Scene {
   street_view_lng: number | null;
   heading: number;
   privacy_approved: boolean;
+  privacy_scan?: unknown;
   gsv_pano_id: string | null;
 }
 interface Hotspot {
