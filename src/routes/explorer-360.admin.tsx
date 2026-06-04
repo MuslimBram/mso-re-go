@@ -30,7 +30,13 @@ async function uploadPanorama(file: File | Blob, originalName = "panorama.jpg"):
   return signed.signedUrl;
 }
 
-function PanoramaField({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
+type ScanReport = { detections: unknown[]; blurRadius: number; manualCount: number };
+interface PanoramaFieldPatch {
+  panorama_url?: string | null;
+  privacy_approved?: boolean;
+  privacy_scan?: { detections: unknown[]; blur_radius: number; manual_count: number; scanned_at: string; version: number } | null;
+}
+function PanoramaField({ value, onPatch }: { value: string | null; onPatch: (patch: PanoramaFieldPatch) => void }) {
   const [busy, setBusy] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   return (
@@ -41,7 +47,7 @@ function PanoramaField({ value, onChange }: { value: string | null; onChange: (u
           defaultValue={value ?? ""}
           key={value ?? ""}
           placeholder="https://… ose ngarko skedar"
-          onBlur={(e) => { const v = e.target.value || null; if (v !== value) onChange(v); }}
+          onBlur={(e) => { const v = e.target.value || null; if (v !== value) onPatch({ panorama_url: v }); }}
           className="flex-1"
         />
         <label className={`inline-flex items-center gap-1 px-3 rounded-md border cursor-pointer text-xs whitespace-nowrap ${busy ? "opacity-50 pointer-events-none" : "hover:bg-muted"}`}>
@@ -63,13 +69,23 @@ function PanoramaField({ value, onChange }: { value: string | null; onChange: (u
         <PrivacyScanner
           file={pendingFile}
           onCancel={() => setPendingFile(null)}
-          onApprove={async (blob, report) => {
+          onApprove={async (blob, report: ScanReport) => {
             setBusy(true);
             const url = await uploadPanorama(blob, pendingFile.name);
             setBusy(false);
             setPendingFile(null);
             if (url) {
-              onChange(url);
+              onPatch({
+                panorama_url: url,
+                privacy_approved: true,
+                privacy_scan: {
+                  detections: report.detections,
+                  blur_radius: report.blurRadius,
+                  manual_count: report.manualCount,
+                  scanned_at: new Date().toISOString(),
+                  version: 1,
+                },
+              });
               toast.success(`Panorama u ngarkua (${report.detections.length} zona blur)`);
             }
           }}
@@ -375,7 +391,7 @@ function ToursAdmin() {
                       <Input defaultValue={s.name} onBlur={(e) => e.target.value !== s.name && updateScene(s.id, { name: e.target.value })} className="font-medium" />
                       <Button size="icon" variant="ghost" onClick={() => deleteScene(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
-                    <PanoramaField value={s.panorama_url} onChange={(url) => updateScene(s.id, { panorama_url: url })} />
+                    <PanoramaField value={s.panorama_url} onPatch={(patch) => updateScene(s.id, patch as Partial<Scene>)} />
                     <div className="grid grid-cols-3 gap-2">
                       <div><Label className="text-xs">Yaw fillestar</Label><Input type="number" step="0.01" defaultValue={s.initial_yaw} onBlur={(e) => updateScene(s.id, { initial_yaw: Number(e.target.value) || 0 })} /></div>
                       <div><Label className="text-xs">Pitch</Label><Input type="number" step="0.01" defaultValue={s.initial_pitch} onBlur={(e) => updateScene(s.id, { initial_pitch: Number(e.target.value) || 0 })} /></div>
