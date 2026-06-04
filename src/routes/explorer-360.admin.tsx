@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import type { Json } from "@/integrations/supabase/types";
 import { ArrowLeft, Plus, Trash2, Save, Settings, Box, Globe2, MapPin, Compass, Link2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { PrivacyScanner } from "@/components/explorer360/PrivacyScanner";
@@ -128,7 +129,7 @@ interface Scene {
   street_view_lng: number | null;
   heading: number;
   privacy_approved: boolean;
-  privacy_scan?: unknown;
+  privacy_scan?: Json | null;
   gsv_pano_id: string | null;
 }
 interface Hotspot {
