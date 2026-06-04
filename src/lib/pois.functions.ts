@@ -122,7 +122,7 @@ export const syncPoisFromPlaces = createServerFn({ method: "POST" })
       }
       const { error } = await supabase
         .from("tour_pois")
-        .upsert(r, { onConflict: "tour_id,google_place_id" });
+        .upsert([r], { onConflict: "tour_id,google_place_id" });
       if (!error) synced++;
     }
     return { synced, skipped, total: rows.length };
