@@ -266,6 +266,7 @@ export type Database = {
           id: string
           link_url: string | null
           media_url: string | null
+          metadata: Json
           pitch: number
           scene_id: string
           target_scene_id: string | null
@@ -279,6 +280,7 @@ export type Database = {
           id?: string
           link_url?: string | null
           media_url?: string | null
+          metadata?: Json
           pitch?: number
           scene_id: string
           target_scene_id?: string | null
@@ -292,6 +294,7 @@ export type Database = {
           id?: string
           link_url?: string | null
           media_url?: string | null
+          metadata?: Json
           pitch?: number
           scene_id?: string
           target_scene_id?: string | null
@@ -354,8 +357,114 @@ export type Database = {
           },
         ]
       }
+      tour_pois: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          google_place_id: string | null
+          hidden: boolean
+          id: string
+          lat: number
+          lng: number
+          manual_override: boolean
+          metadata: Json
+          name: string
+          phone: string | null
+          photo_url: string | null
+          rating: number | null
+          scene_id: string | null
+          source: string
+          tour_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          google_place_id?: string | null
+          hidden?: boolean
+          id?: string
+          lat: number
+          lng: number
+          manual_override?: boolean
+          metadata?: Json
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          rating?: number | null
+          scene_id?: string | null
+          source?: string
+          tour_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          google_place_id?: string | null
+          hidden?: boolean
+          id?: string
+          lat?: number
+          lng?: number
+          manual_override?: boolean
+          metadata?: Json
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          rating?: number | null
+          scene_id?: string | null
+          source?: string
+          tour_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      tour_routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          duration_minutes: number | null
+          id: string
+          name: string
+          scene_order: Json
+          tour_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name: string
+          scene_order?: Json
+          tour_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name?: string
+          scene_order?: Json
+          tour_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tour_scenes: {
         Row: {
+          ai_cache: Json | null
+          ai_cache_updated_at: string | null
+          ai_context: string | null
+          ai_topics: string[]
           content_hash: string | null
           created_at: string
           floor: number
@@ -386,6 +495,10 @@ export type Database = {
           tour_id: string
         }
         Insert: {
+          ai_cache?: Json | null
+          ai_cache_updated_at?: string | null
+          ai_context?: string | null
+          ai_topics?: string[]
           content_hash?: string | null
           created_at?: string
           floor?: number
@@ -416,6 +529,10 @@ export type Database = {
           tour_id: string
         }
         Update: {
+          ai_cache?: Json | null
+          ai_cache_updated_at?: string | null
+          ai_context?: string | null
+          ai_topics?: string[]
           content_hash?: string | null
           created_at?: string
           floor?: number
