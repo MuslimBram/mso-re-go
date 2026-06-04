@@ -79,13 +79,13 @@ function PanoramaField({ value, onPatch }: { value: string | null; onPatch: (pat
               onPatch({
                 panorama_url: url,
                 privacy_approved: true,
-                privacy_scan: {
+                privacy_scan: JSON.parse(JSON.stringify({
                   detections: report.detections,
                   blur_radius: report.blurRadius,
                   manual_count: report.manualCount,
                   scanned_at: new Date().toISOString(),
                   version: 1,
-                },
+                })) as Json,
               });
               toast.success(`Panorama u ngarkua (${report.detections.length} zona blur)`);
             }
