@@ -100,7 +100,7 @@ export const syncPoisFromPlaces = createServerFn({ method: "POST" })
         photo_url: photo ? `https://places.googleapis.com/v1/${photo}/media?maxHeightPx=400&key=${gmapsKey}` : null,
         website: (p.websiteUri as string | undefined) ?? null,
         phone: (p.nationalPhoneNumber as string | undefined) ?? null,
-        metadata: { types: p.types ?? [] },
+        metadata: JSON.parse(JSON.stringify({ types: (p.types as string[] | undefined) ?? [] })),
       };
     });
 
